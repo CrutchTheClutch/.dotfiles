@@ -7,5 +7,5 @@ My personal dotfiles for macOS
 Run these commands to install the dotfiles
 
 ```shell
-curl https://dotfiles.wrc.dev | bash
+curl -L https://dotfiles.wrc.dev | bash
 ```
