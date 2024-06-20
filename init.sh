@@ -15,9 +15,9 @@ fail () {
 }
 
 # install xcode-select
-info("Checking Command Line Tools for Xcode")
+info "Checking Command Line Tools for Xcode"
 if ! xcode-select -p >/dev/null 2>&1; then
-  warn("Command Line Tools for Xcode not found. Installing from softwareupdate…")
+  warn "Command Line Tools for Xcode not found. Installing from softwareupdate…"
   # This temporary file prompts the 'softwareupdate' utility to list the Command Line Tools
   touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
   PROD=$(softwareupdate -l | grep "\*.*Command Line" | tail -n 1 | sed 's/^[^C]* //')
@@ -26,9 +26,9 @@ fi
 
 # verify xcode-select install
 if xcode-select -p >/dev/null 2>&1;
-  success("Command Line Tools for Xcode have been installed.")
+  success "Command Line Tools for Xcode have been installed."
 else
-  fail("Command Line Tools for Xcode have failed to install.")
+  fail "Command Line Tools for Xcode have failed to install."
 fi
 
 # setup homebrew
