@@ -22,7 +22,7 @@ exec 2> >(trap "" INT TERM; sed 's/^/\033[0;35m[XCODE]\033[0m /' >&2)
 # install xcode-select
 info "Validating Command Line Tools for Xcode"
 if ! xcode-select -p >/dev/null 2>&1; then
-  warn "Command Line Tools for Xcode not found. Installing from softwareupdate…"
+  warn "Command Line Tools for Xcode not found. Attempting to install from softwareupdate..."
   # This temporary file prompts the 'softwareupdate' utility to list the Command Line Tools
   touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
   PROD=$(softwareupdate -l | grep "\*.*Command Line" | tail -n 1 | sed 's/^[^C]* //')
@@ -42,3 +42,15 @@ exec 2> >(trap "" INT TERM; sed 's/^/\033[0;35m[HOMEBREW]\033[0m /' >&2)
 
 # setup homebrew
 info "Validating Homebrew "
+if ! homebrew -v >/dev/null 2>&1; then
+  warn "Homebrew not found.  Attempting to install..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# verify and update homebrew
+if homebrew -v >/dev/null 2>&1;
+  success "Successfully installed Homebrew."
+  brew update
+else
+  fail "Failed to install Homebrew."
+fi
