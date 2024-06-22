@@ -1,68 +1,33 @@
-#!/bin/bash
+#!/bin/zsh
+
+# logging config
+LOG_NAME="init.log"
+LOG_PATH="./$LOG_NAME"
+
 # logging functions
 info () {
-  printf "\r[\033[0;96mINFO\033[0m] $1\n"
+  printf "[\033[0;35m$1\033[0m][\033[0;96mINFO\033[0m] $2\n"
+  printf "[$1][INFO] $2\n" >> $LOG_PATH
 }
 warn () {
-  printf "\r[\033[0;93mWARN\033[0m] $1\n"
+  printf "[\033[0;35m$1\033[0m][\033[0;93mWARN\033[0m] $2\n"
+  printf "[$1][WARN] $2\n" >>  $LOG_PATH
 }
 success () {
-  printf "\r\033[2K[ \033[0;92mOK\033[0m ] $1\n"
+  printf "[\033[0;35m$1\033[0m][ \033[0;92mOK\033[0m ] $2\n"
+  printf "[$1][ OK ] $2\n" >> $LOG_PATH
 }
 fail () {
-  printf "\r\033[2K[\033[0;91mFAIL\033[0m] $1\n"
-  echo ''
+  printf "[\033[0;35m$1\033[0m]\033[2K[\033[0;91mFAIL\033[0m] $2\n"
+  printf "[$1][FAIL] $2\n" >> $LOG_PATH
   exit
 }
 
-# Ask for the administrator password upfront
-sudo -v
-
-# # homebrew logs
-# exec > >(trap "" INT TERM; sed $'s/^/[\033[0;35mHOMEBREW\033[0m]/')
-# exec 2> >(trap "" INT TERM; sed $'s/^/[\033[0;35mHOMEBREW\033[0m]/' >&2)
-
-# setup homebrew
-info "Validating Homebrew "
-if ! homebrew -v >/dev/null 2>&1; then
-  warn "Homebrew not found.  Attempting to install..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
-
-# verify and update homebrew
-if homebrew -v >/dev/null 2>&1; then
-  success "Successfully installed Homebrew."
-  brew update
-else
-  fail "Failed to install Homebrew."
-fi
-
-
+# Used when comparing installed CLI tools versus latest available via softwareupate
+autoload is-at-least
 
 xcode_cli_tools() {
-
-# # xcode logs
-# exec > >(trap "" INT TERM; sed $'s/^/[\033[0;35mXCODE\033[0m]/')
-# exec 2> >(trap "" INT TERM; sed $'s/^/[\033[0;35mXCODE\033[0m]/' >&2)
-
-# install xcode-select
-info "Validating Command Line Tools for Xcode"
-if ! xcode-select -p >/dev/null 2>&1; then
-  warn "Command Line Tools for Xcode not found. Attempting to install from softwareupdate..."
-  # This temporary file prompts the 'softwareupdate' utility to list the Command Line Tools
-  touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
-  PROD=$(softwareupdate -l | grep "\*.*Command Line" | tail -n 1 | sed 's/^[^C]* //')
-  softwareupdate -i "$PROD" --verbose;
-fi
-
-# verify xcode-select install
-if xcode-select -p >/dev/null 2>&1; then
-  success "Successfully installed Command Line Tools for Xcode."
-else
-  fail "Failed to install Command Line Tools for Xcode."
-fi
-
-    info "Validating Xcode CLI tools..."
+    info "XCODE" "Validating Xcode CLI tools..."
 
     # Trick softwareupdate into giving us everything it knows about Xcode CLI tools by
     # touching the following file to /tmp
@@ -74,32 +39,30 @@ fi
 
     # shellcheck disable=SC2181
     if [[ "$?" -eq 0 ]]; then
-        success "Valid Xcode CLI tools path found!"
+        success "XCODE" "Valid Xcode CLI tools path found."
 
         # current bundleid for CLI tools
         bundle_id="com.apple.pkg.CLTools_Executables"
 
+        info "XCODE" "Determining current Xcode CLI version..."
+
         if pkgutil --pkgs="$bundle_id" >/dev/null; then
             # If the CLI tools pkg bundle is found, get the version
-
-            installed_version=$(pkgutil --pkg-info="$bundle_id" |
-                awk '/version:/ {print $2}' |
-                awk -F "." '{print $1"."$2}')
-
-            info "Installed Xcode CLI tools version is \"$installed_version\""
+            installed_version=$(pkgutil --pkg-info="com.apple.pkg.CLTools_Executables" | awk '/version:/ {print $2}' | awk -F "." '{print $1"."$2}')
+            success "XCODE" "Installed Xcode CLI tools version is \"$installed_version\""
 
         else
-            info "Unable to determine installed Xcode CLI tools version from \"$bundle_id\"."
+            warn "XCODE" "Unable to determine installed Xcode CLI tools version from \"$bundle_id\"."
         fi
 
-        info "Checking to see if there are any available Xcode CLI tool updates..."
+        info "XCODE" "Checking to see if there are any available Xcode CLI tool updates..."
 
         # Get the latest available CLI tools
         cmd_line_tools=("$(get_available_cli_tool_installs)")
 
     else
-        info "Valid Xcode CLI tools path was not found..."
-        info "Getting the latest Xcode CLI tools available for install..."
+        warn "XCODE" "Valid Xcode CLI tools path was not found..."
+        info "XCODE" "Getting the latest Xcode CLI tools available for install..."
 
         # Get the latest available CLI tools
         cmd_line_tools=("$(get_available_cli_tool_installs)")
@@ -108,15 +71,14 @@ fi
     # if something is returned from the cli tools check
     # shellcheck disable=SC2128
     if [[ -n $cmd_line_tools ]]; then
-        info "Available Xcode CLI tools found: "
-        info "$cmd_line_tools"
+        success "XCODE" "Available Xcode CLI tools found: $cmd_line_tools"
 
-        if (($(grep -c . <<<"${cmd_line_tools}") > 1)); then
+        if (($(grep -c . <<<"${cmd_line_tools}") > 0)); then
             cmd_line_tools_output="${cmd_line_tools}"
-            cmd_line_tools=$(/bin/echo "${cmd_line_tools_output}" | tail -1)
+            cmd_line_tools=$(echo "${cmd_line_tools_output}" | tail -1)
 
             # get version number of the latest CLI tools installer.
-            lastest_available_version=$(/bin/echo "${cmd_line_tools_output}" | tail -1 | awk -F "-" '{print $2}')
+            lastest_available_version=$(echo "$cmd_line_tools_output" | tail -1 | awk -F "-" '{print $2}')
         fi
 
         if [[ -n $installed_version ]]; then
@@ -124,32 +86,32 @@ fi
 
             # compare latest version to installed version using is-at-least
             version_check="$(is-at-least "$lastest_available_version" "$installed_version" &&
-                /bin/echo "greater than or equal to" || /bin/echo "less than")"
+                echo "greater than or equal to" || echo "less than")"
 
             if [[ $version_check == *"less"* ]]; then
                 # if the installed version is less than available
-                info "Updating $cmd_line_tools..."
+                info "XCODE" "Updating $cmd_line_tools..."
                 softwareupdate --install "${cmd_line_tools}" --verbose
 
             else
                 # if the installed version is greater than or equal to latest available
-                success "Installed version \"$installed_version\" is $version_check the latest available version \"$lastest_available_version\". No upgrade needed."
+                success "XCODE" "Installed version \"$installed_version\" is $version_check the latest available version \"$lastest_available_version\"!"
             fi
 
         else
-            info "Installing $cmd_line_tools..."
+            info "XCODE" "Installing $cmd_line_tools..."
             softwareupdate --install "${cmd_line_tools}" --verbose
+            success "XCODE" "Successfully installed Xcode CLI tools!"
         fi
 
     else
-        warn "Hmmmmmm...unabled to return any available CLI tools..."
-        warn "May need to validate the softwareupdate command used."
+        warn "XCODE" "Hmmmmmm...unabled to return any available CLI tools..."
+        warn "XCODE" "May need to validate the softwareupdate command used."
     fi
 
-    info "Cleaning up $xclt_tmp ..."
+    info "XCODE" "Cleaning up $xclt_tmp..."
     rm "${xclt_tmp}"
-
-    success "Successfully installed Xcode CLI tools!"
+    success "XCODE" "Succesfully removed $xclt_tmp"
 }
 
 get_available_cli_tool_installs() {
@@ -178,9 +140,11 @@ get_available_cli_tool_installs() {
 }
 
 rosetta2() {
+    info "ROSETTA" "Validating Rosetta2..."
+
     # Determine the processor brand
     if [[ "$1" == *"Apple"* ]]; then
-        info "Apple Processor is present..."
+        info "ROSETTA" "Apple Processor is present."
 
         # Check if the Rosetta service is running
         check_rosetta_status=$(pgrep oahd)
@@ -191,17 +155,46 @@ rosetta2() {
         rosetta_folder="/Library/Apple/usr/share/rosetta"
 
         if [[ -n $check_rosetta_status ]] && [[ -e $rosetta_folder ]]; then
-            info "Rosetta2 is installed... no action needed"
+            success "ROSETTA" "Rosetta2 is already installed!"
 
         else
-            info "Rosetta is not installed... installing now"
+            warn "ROSETTA" "Rosetta2 not found."
+            info "ROSETTA" "Installing Rosetta2."
 
             # Installs Rosetta
             softwareupdate --install-rosetta --agree-to-license |
                 tee -a "${LOG_PATH}"
+
+            success "ROSETTA" "Succesfully installed Rosetta2!"
         fi
 
     else
-        info "Apple Processor is not present...Rosetta2 is not needed"
+        info "ROSETTA" "Apple Processor is not present.  Rosetta2 is not needed."
     fi
 }
+
+# Get the processor brand information
+processor_brand="$(sysctl -n machdep.cpu.brand_string)"
+
+xcode_cli_tools
+rosetta2 "$processor_brand"
+
+
+# # # homebrew logs
+# # exec > >(trap "" INT TERM; sed $'s/^/[\033[0;35mHOMEBREW\033[0m]/')
+# # exec 2> >(trap "" INT TERM; sed $'s/^/[\033[0;35mHOMEBREW\033[0m]/' >&2)
+
+# # setup homebrew
+# info "Validating Homebrew "
+# if ! homebrew -v >/dev/null 2>&1; then
+#   warn "Homebrew not found.  Attempting to install..."
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# fi
+
+# # verify and update homebrew
+# if homebrew -v >/dev/null 2>&1; then
+#   success "Successfully installed Homebrew."
+#   brew update
+# else
+#   fail "Failed to install Homebrew."
+# fi
