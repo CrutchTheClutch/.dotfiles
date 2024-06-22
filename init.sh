@@ -162,7 +162,7 @@ rosetta2() {
             info "ROSETTA" "Installing Rosetta2."
 
             # Installs Rosetta
-            softwareupdate --install-rosetta --agree-to-license |
+            softwareupdate --install-rosetta --agree-to-license --verbose |
                 tee -a "${LOG_PATH}"
 
             success "ROSETTA" "Succesfully installed Rosetta2!"
