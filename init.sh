@@ -13,7 +13,7 @@ warn () {
   printf "[\033[0;35m$1\033[0m][\033[0;93mWARN\033[0m] $2\n"
   printf "[$1][WARN] $2\n" >>  $LOG_PATH
 }
-success () {
+ok () {
   printf "[\033[0;35m$1\033[0m][ \033[0;92mOK\033[0m ] $2\n"
   printf "[$1][ OK ] $2\n" >> $LOG_PATH
 }
@@ -39,7 +39,7 @@ xcode_cli_tools() {
 
     # shellcheck disable=SC2181
     if [[ "$?" -eq 0 ]]; then
-        success "XCODE" "Valid Xcode CLI tools path found."
+        ok "XCODE" "Valid Xcode CLI tools path found."
 
         # current bundleid for CLI tools
         bundle_id="com.apple.pkg.CLTools_Executables"
@@ -49,7 +49,7 @@ xcode_cli_tools() {
         if pkgutil --pkgs="$bundle_id" >/dev/null; then
             # If the CLI tools pkg bundle is found, get the version
             installed_version=$(pkgutil --pkg-info="com.apple.pkg.CLTools_Executables" | awk '/version:/ {print $2}' | awk -F "." '{print $1"."$2}')
-            success "XCODE" "Installed Xcode CLI tools version is \"$installed_version\""
+            ok "XCODE" "Installed Xcode CLI tools version is \"$installed_version\""
 
         else
             warn "XCODE" "Unable to determine installed Xcode CLI tools version from \"$bundle_id\"."
@@ -71,7 +71,7 @@ xcode_cli_tools() {
     # if something is returned from the cli tools check
     # shellcheck disable=SC2128
     if [[ -n $cmd_line_tools ]]; then
-        success "XCODE" "Available Xcode CLI tools found: $cmd_line_tools"
+        ok "XCODE" "Available Xcode CLI tools found: $cmd_line_tools"
 
         if (($(grep -c . <<<"${cmd_line_tools}") > 0)); then
             cmd_line_tools_output="${cmd_line_tools}"
@@ -95,13 +95,13 @@ xcode_cli_tools() {
 
             else
                 # if the installed version is greater than or equal to latest available
-                success "XCODE" "Installed version \"$installed_version\" is $version_check the latest available version \"$lastest_available_version\"!"
+                ok "XCODE" "Installed version \"$installed_version\" is $version_check the latest available version \"$lastest_available_version\"!"
             fi
 
         else
             info "XCODE" "Installing $cmd_line_tools..."
             softwareupdate --install "${cmd_line_tools}" --verbose
-            success "XCODE" "Successfully installed Xcode CLI tools!"
+            ok "XCODE" "Successfully installed Xcode CLI tools!"
         fi
 
     else
@@ -111,7 +111,7 @@ xcode_cli_tools() {
 
     info "XCODE" "Cleaning up $xclt_tmp..."
     rm "${xclt_tmp}"
-    success "XCODE" "Succesfully removed $xclt_tmp"
+    ok "XCODE" "Successfully removed $xclt_tmp"
 }
 
 get_available_cli_tool_installs() {
@@ -155,7 +155,7 @@ rosetta2() {
         rosetta_folder="/Library/Apple/usr/share/rosetta"
 
         if [[ -n $check_rosetta_status ]] && [[ -e $rosetta_folder ]]; then
-            success "ROSETTA" "Rosetta2 is already installed!"
+            ok "ROSETTA" "Rosetta2 is already installed!"
 
         else
             warn "ROSETTA" "Rosetta2 not found."
@@ -165,7 +165,7 @@ rosetta2() {
             softwareupdate --install-rosetta --agree-to-license --verbose |
                 tee -a "${LOG_PATH}"
 
-            success "ROSETTA" "Succesfully installed Rosetta2!"
+            ok "ROSETTA" "Successfully installed Rosetta2!"
         fi
 
     else
@@ -184,6 +184,7 @@ case $os in
     ;;
     
   Darwin*)
+    ok
     # Get the processor brand information
     processor_brand="$(sysctl -n machdep.cpu.brand_string)"
     xcode_cli_tools
@@ -212,7 +213,7 @@ echo "install homebrew here :)".
 
 # # verify and update homebrew
 # if homebrew -v >/dev/null 2>&1; then
-#   success "Successfully installed Homebrew."
+#   ok "Successfully installed Homebrew."
 #   brew update
 # else
 #   fail "Failed to install Homebrew."
