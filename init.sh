@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 # logging config
 LOG_NAME="init.log"
@@ -22,9 +22,6 @@ fail () {
   printf "[$1][FAIL] $2\n" >> $LOG_PATH
   exit
 }
-
-# Used when comparing installed CLI tools versus latest available via softwareupate
-autoload is-at-least
 
 xcode_cli_tools() {
     info "XCODE" "Validating Xcode CLI tools..."
@@ -184,13 +181,16 @@ case $os in
     ;;
     
   Darwin*)
+    zsh << 'EOF'
+    # Used when comparing installed CLI tools versus latest available via softwareupate
+    autoload is-at-least
     ok "INIT" "Supported operating system: ${OS}"
     # Get the processor brand information
     processor_brand="$(sysctl -n machdep.cpu.brand_string)"
     xcode_cli_tools
     rosetta2 "$processor_brand"
+    EOF
     ;;
-
   *)
     fail "INIT" "Unsupported operating system: ${OS}"
     exit 1
