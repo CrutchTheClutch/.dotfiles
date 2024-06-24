@@ -187,7 +187,7 @@ case $os in
     processor_brand="\$(sysctl -n machdep.cpu.brand_string)"
     xcode_cli_tools
     rosetta2 "\$processor_brand"
-    EOF
+EOF
     ;;
   *)
     fail "INIT" "Unsupported operating system: ${os}"
