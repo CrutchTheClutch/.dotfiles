@@ -18,9 +18,9 @@ ok () {
   printf "[$1][ OK ] $2\n" >> $LOG_PATH
 }
 fail () {
-  printf "[\033[0;35m$1\033[0m]\033[2K[\033[0;91mFAIL\033[0m] $2\n"
+  printf "[\033[0;35m$1\033[0m][\033[0;91mFAIL\033[0m] $2\n"
   printf "[$1][FAIL] $2\n" >> $LOG_PATH
-  exit
+  exit 1
 }
 
 xcode_cli_tools() {
@@ -173,7 +173,7 @@ rosetta2() {
 # Get the os information
 os="$(uname -s)"
 
-# install prerquisites
+# Install prerequisites
 case $os in
   Linux*)
     fail "INIT" "Unsupported Linux distribution"
@@ -181,13 +181,15 @@ case $os in
     
   Darwin*)
     ok "INIT" "Supported operating system: ${os}"
-    zsh << 'EOF'
-    # Used when comparing installed CLI tools versus latest available via softwareupate
+    zsh <<EOF
+    # Source the logging functions
+    source <(declare -f info warn ok fail xcode_cli_tools get_available_cli_tool_installs rosetta2)
+    # Used when comparing installed CLI tools versus latest available via softwareupdate
     autoload is-at-least
     # Get the processor brand information
-    processor_brand="$(sysctl -n machdep.cpu.brand_string)"
+    processor_brand="\$(sysctl -n machdep.cpu.brand_string)"
     xcode_cli_tools
-    rosetta2 "$processor_brand"
+    rosetta2 "\$processor_brand"
     EOF
     ;;
   *)
@@ -195,24 +197,4 @@ case $os in
     ;;
 esac
 
-echo "install homebrew here :)".
-
-
-# # # homebrew logs
-# # exec > >(trap "" INT TERM; sed $'s/^/[\033[0;35mHOMEBREW\033[0m]/')
-# # exec 2> >(trap "" INT TERM; sed $'s/^/[\033[0;35mHOMEBREW\033[0m]/' >&2)
-
-# # setup homebrew
-# info "Validating Homebrew "
-# if ! homebrew -v >/dev/null 2>&1; then
-#   warn "Homebrew not found.  Attempting to install..."
-#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-# fi
-
-# # verify and update homebrew
-# if homebrew -v >/dev/null 2>&1; then
-#   ok "Successfully installed Homebrew."
-#   brew update
-# else
-#   fail "Failed to install Homebrew."
-# fi
+echo "Install homebrew here :)"
