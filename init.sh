@@ -177,14 +177,13 @@ os="$(uname -s)"
 case $os in
   Linux*)
     fail "INIT" "Unsupported Linux distribution"
-    exit 1
     ;;
     
   Darwin*)
+    ok "INIT" "Supported operating system: ${os}"
     zsh << 'EOF'
     # Used when comparing installed CLI tools versus latest available via softwareupate
     autoload is-at-least
-    ok "INIT" "Supported operating system: ${OS}"
     # Get the processor brand information
     processor_brand="$(sysctl -n machdep.cpu.brand_string)"
     xcode_cli_tools
@@ -192,8 +191,7 @@ case $os in
     EOF
     ;;
   *)
-    fail "INIT" "Unsupported operating system: ${OS}"
-    exit 1
+    fail "INIT" "Unsupported operating system: ${os}"
     ;;
 esac
 
