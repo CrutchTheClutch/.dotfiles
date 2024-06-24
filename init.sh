@@ -168,11 +168,12 @@ os="$(uname -s)"
 # Install prerequisites
 case $os in
   Linux*)
-    if [ -f /etc/lsb-release ]; then
-            ok "INIT" "Supported operating system: ${os}"
-    else
+    ## Ubuntu - Not supported yet
+    #if [ -f /etc/lsb-release ]; then
+    #        ok "INIT" "Supported operating system: ${os}"
+    #else
       fail "INIT" "Unsupported Linux distribution"
-    fi
+    #fi
     ;;
     
   Darwin*)
