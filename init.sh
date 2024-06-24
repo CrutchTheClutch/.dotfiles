@@ -7,19 +7,15 @@ LOG_PATH="./$LOG_NAME"
 # logging functions
 info () {
   printf "[\033[0;35m$1\033[0m][\033[0;96mINFO\033[0m] $2\n"
-  printf "[$1][INFO] $2\n" >> $LOG_PATH
 }
 warn () {
   printf "[\033[0;35m$1\033[0m][\033[0;93mWARN\033[0m] $2\n"
-  printf "[$1][WARN] $2\n" >>  $LOG_PATH
 }
 ok () {
   printf "[\033[0;35m$1\033[0m][ \033[0;92mOK\033[0m ] $2\n"
-  printf "[$1][ OK ] $2\n" >> $LOG_PATH
 }
 fail () {
   printf "[\033[0;35m$1\033[0m][\033[0;91mFAIL\033[0m] $2\n"
-  printf "[$1][FAIL] $2\n" >> $LOG_PATH
   exit 1
 }
 
