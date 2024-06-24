@@ -170,7 +170,11 @@ os="$(uname -s)"
 # Install prerequisites
 case $os in
   Linux*)
-    fail "INIT" "Unsupported Linux distribution"
+    if [ -f /etc/lsb-release ]; then
+            ok "INIT" "Supported operating system: ${os}"
+    else
+      fail "INIT" "Unsupported Linux distribution"
+    fi
     ;;
     
   Darwin*)
