@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# logging config
-LOG_NAME="init.log"
-LOG_PATH="./$LOG_NAME"
-
 # logging functions
 info () {
   printf "[\033[0;35m$1\033[0m][\033[0;96mINFO\033[0m] $2\n"
