@@ -173,11 +173,30 @@ rosetta2() {
     fi
 }
 
-# Get the processor brand information
-processor_brand="$(sysctl -n machdep.cpu.brand_string)"
+# Get the os information
+os="$(uname -s)"
 
-xcode_cli_tools
-rosetta2 "$processor_brand"
+# install prerquisites
+case $os in
+  Linux*)
+    fail "INIT" "Unsupported Linux distribution"
+    exit 1
+    ;;
+    
+  Darwin*)
+    # Get the processor brand information
+    processor_brand="$(sysctl -n machdep.cpu.brand_string)"
+    xcode_cli_tools
+    rosetta2 "$processor_brand"
+    ;;
+
+  *)
+    fail "INIT" "Unsupported operating system: ${OS}"
+    exit 1
+    ;;
+esac
+
+echo "install homebrew here :)".
 
 
 # # # homebrew logs
