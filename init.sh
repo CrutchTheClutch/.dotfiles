@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# The purpose of this script is to get supported Linux / macOS devices to a standard "baseline" so that we can use the homebrew package manager universally for installing packages and start configuring dotfiles
+
 # logging functions
 info () {
   printf "[\033[0;35m$1\033[0m][\033[0;96mINFO\033[0m] $2\n"
