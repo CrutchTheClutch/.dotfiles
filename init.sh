@@ -184,7 +184,7 @@ case $os in
     ;;
     
   Darwin*)
-    ok
+    ok "INIT" "Supported operating system: ${OS}"
     # Get the processor brand information
     processor_brand="$(sysctl -n machdep.cpu.brand_string)"
     xcode_cli_tools
