@@ -34,7 +34,6 @@ xcode_cli_tools() {
     # Run xcrun command to check for a valid Xcode CLI tools path
     xcrun --version >/dev/null 2>&1
 
-    # shellcheck disable=SC2181
     if [[ "$?" -eq 0 ]]; then
         ok "XCODE" "Valid Xcode CLI tools path found."
 
@@ -66,7 +65,6 @@ xcode_cli_tools() {
     fi
 
     # if something is returned from the cli tools check
-    # shellcheck disable=SC2128
     if [[ -n $cmd_line_tools ]]; then
         ok "XCODE" "Available Xcode CLI tools found: $cmd_line_tools"
 
@@ -182,8 +180,7 @@ case $os in
   Darwin*)
     ok "INIT" "Supported operating system: ${os}"
     zsh <<EOF
-    # Source the logging functions
-    source <(declare -f info warn ok fail xcode_cli_tools get_available_cli_tool_installs rosetta2)
+    $(declare -f info warn ok fail xcode_cli_tools get_available_cli_tool_installs rosetta2)
     # Used when comparing installed CLI tools versus latest available via softwareupdate
     autoload is-at-least
     # Get the processor brand information
@@ -197,4 +194,4 @@ case $os in
     ;;
 esac
 
-echo "Install homebrew here :)"
+echo "install homebrew here :)"
