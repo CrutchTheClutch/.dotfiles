@@ -9,3 +9,12 @@ Run this command to install my dotfiles. Downloads and runs the `init.sh` script
 ```shell
 curl -L https://dotfiles.wrc.dev | bash
 ```
+
+# TODO
+
+List of things I need to automate
+
+- [ ] Prerequisites
+  - [ ] Dev Tools (macOS)
+  - [ ] Homebrew (macOS)
+  - [ ] Ansible
