@@ -1,10 +1,7 @@
 #!/bin/bash
 
 log() {
-    local color=$1
-    local status=$2
-    local message=$3
-    printf "[\033[0;${color}m${status}\033[0m] $message\n"
+    printf "[\033[0;$1m$2\033[0m] $3\n"
 }
 
 info() {
