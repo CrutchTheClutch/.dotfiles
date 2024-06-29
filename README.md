@@ -14,9 +14,9 @@ curl -L https://dotfiles.wrc.dev | bash
 
 List of things I need to configure and automate for simple dev env setup (in no particular order)
 
-- [ ] Xcode Dev Tools (macOS)
-- [ ] Homebrew
-- [ ] Ansible
+- [x] Xcode Dev Tools (macOS)
+- [x] Homebrew
+- [x] Ansible
 - [ ] nvim
 - [ ] yabai
 - [ ] skhd?
