@@ -33,7 +33,7 @@ get_available_cli_tool_installs() {
     echo "$cmd_line_tools"
 }
 
-info "XCODE" "Validating Xcode CLI tools..."
+info "Validating Xcode CLI tools..."
 
     # Trick softwareupdate into giving us everything it knows about Xcode CLI tools by
     # touching the following file to /tmp
@@ -44,30 +44,30 @@ info "XCODE" "Validating Xcode CLI tools..."
     xcrun --version >/dev/null 2>&1
 
     if [[ "$?" -eq 0 ]]; then
-        info "XCODE" "Valid Xcode CLI tools path found."
+        info "Valid Xcode CLI tools path found."
 
         # current bundleid for CLI tools
         bundle_id="com.apple.pkg.CLTools_Executables"
 
-        info "XCODE" "Determining current Xcode CLI version..."
+        info "Determining current Xcode CLI version..."
 
         if pkgutil --pkgs="$bundle_id" >/dev/null; then
             # If the CLI tools pkg bundle is found, get the version
             installed_version=$(pkgutil --pkg-info="com.apple.pkg.CLTools_Executables" | awk '/version:/ {print $2}' | awk -F "." '{print $1"."$2}')
-            ok "XCODE" "Installed Xcode CLI tools version is \"$installed_version\""
+            ok "Installed Xcode CLI tools version is \"$installed_version\""
 
         else
-            warn "XCODE" "Unable to determine installed Xcode CLI tools version from \"$bundle_id\"."
+            warn "Unable to determine installed Xcode CLI tools version from \"$bundle_id\"."
         fi
 
-        info "XCODE" "Checking to see if there are any available Xcode CLI tool updates..."
+        info "Checking to see if there are any available Xcode CLI tool updates..."
 
         # Get the latest available CLI tools
         cmd_line_tools=("$(get_available_cli_tool_installs)")
 
     else
-        warn "XCODE" "Valid Xcode CLI tools path was not found..."
-        info "XCODE" "Getting the latest Xcode CLI tools available for install..."
+        warn "Valid Xcode CLI tools path was not found..."
+        info "Getting the latest Xcode CLI tools available for install..."
 
         # Get the latest available CLI tools
         cmd_line_tools=("$(get_available_cli_tool_installs)")
@@ -75,7 +75,7 @@ info "XCODE" "Validating Xcode CLI tools..."
 
     # if something is returned from the cli tools check
     if [[ -n $cmd_line_tools ]]; then
-        info "XCODE" "Available Xcode CLI tools found: $cmd_line_tools"
+        info "Available Xcode CLI tools found: $cmd_line_tools"
 
         if (($(grep -c . <<<"${cmd_line_tools}") > 0)); then
             cmd_line_tools_output="${cmd_line_tools}"
@@ -94,25 +94,25 @@ info "XCODE" "Validating Xcode CLI tools..."
 
             if [[ $version_check == *"less"* ]]; then
                 # if the installed version is less than available
-                info "XCODE" "Updating $cmd_line_tools..."
+                info "Updating $cmd_line_tools..."
                 softwareupdate --install "${cmd_line_tools}" --verbose
 
             else
                 # if the installed version is greater than or equal to latest available
-                ok "XCODE" "Installed version \"$installed_version\" is $version_check the latest available version \"$lastest_available_version\"!"
+                ok "Installed version \"$installed_version\" is $version_check the latest available version \"$lastest_available_version\"!"
             fi
 
         else
-            info "XCODE" "Installing $cmd_line_tools..."
+            info "Installing $cmd_line_tools..."
             softwareupdate --install "${cmd_line_tools}" --verbose
-            ok "XCODE" "Successfully installed Xcode CLI tools!"
+            ok "Successfully installed Xcode CLI tools!"
         fi
 
     else
-        warn "XCODE" "Hmmmmmm...unabled to return any available CLI tools..."
-        warn "XCODE" "May need to validate the softwareupdate command used."
+        warn "Hmmmmmm...unabled to return any available CLI tools..."
+        warn "May need to validate the softwareupdate command used."
     fi
 
-    info "XCODE" "Cleaning up $xclt_tmp..."
+    info "Cleaning up $xclt_tmp..."
     rm "${xclt_tmp}"
-    ok "XCODE" "Successfully removed $xclt_tmp"
+    ok "Successfully removed $xclt_tmp"
