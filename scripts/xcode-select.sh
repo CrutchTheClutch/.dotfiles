@@ -44,7 +44,7 @@ touch "$xclt_tmp"
 xcrun --version >/dev/null 2>&1
 
 if [[ "$?" -eq 0 ]]; then
-    info "Valid Xcode CLI tools path found."
+    info "Valid Xcode CLI tools path found"
 
     # current bundleid for CLI tools
     bundle_id="com.apple.pkg.CLTools_Executables"
@@ -57,7 +57,7 @@ if [[ "$?" -eq 0 ]]; then
         ok "Installed Xcode CLI tools version is \"$installed_version\""
 
     else
-        warn "Unable to determine installed Xcode CLI tools version from \"$bundle_id\"."
+        warn "Unable to determine installed Xcode CLI tools version from \"$bundle_id\""
     fi
 
     info "Checking to see if there are any available Xcode CLI tool updates..."
@@ -110,7 +110,7 @@ if [[ -n $cmd_line_tools ]]; then
 
 else
     warn "Hmmmmmm...unabled to return any available CLI tools..."
-    warn "May need to validate the softwareupdate command used."
+    warn "May need to validate the softwareupdate command used"
 fi
 
 info "Cleaning up $xclt_tmp..."
