@@ -29,13 +29,26 @@ esac
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
 curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/xcode-select.sh | zsh
 
-# 3. Checkout .dotfile repo at user root directory
+# 3: Set macOS preferences
+#  NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
+curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/macos.sh | zsh
+
+# 4: Checkout .dotfile repo at user root directory
 info "Downloading .dotfiles..."
 cd ~
-git clone https://github.com/CrutchTheClutch/.dotfiles.git
-cd ~/.dotfiles
-ok "Download complete!"
 
+# if directory exists, warn but continue
+if [ -d "~/.dotfiles" ]; then
+  warn "Dotfiles already exist, local copy may not be up to date with the latest."
+else
+  info "Downloading dotfiles from git clone https://github.com/CrutchTheClutch/.dotfiles.git"
+  git clone https://github.com/CrutchTheClutch/.dotfiles.git
+  cd ~/.dotfiles
+fi
+
+ok "Dotfiles checkedout locally!"
+
+# 5: Install HomeBrew
 info "Validating Homebrew..."
 
 which -s brew
@@ -45,6 +58,8 @@ if [[ $? != 0 ]] ; then
 fi
 
 ok "Homebrew installed!"
+
+# 6: Update HomeBrew
 info "Updating Homebrew..."
 brew update
 ok "Homebrew up to date!"
