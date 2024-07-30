@@ -1,5 +1,4 @@
-#!/bin/zsh
-# NOTE: Utilize zsh rather than bash due to issues with sourcing scripts
+#!/bin/bash
 
 log() {
     printf "[\033[0;$1m$2\033[0m] $3\n"
