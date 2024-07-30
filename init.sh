@@ -34,11 +34,11 @@ source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEA
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
 source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/macos.sh)
 
-# 4: Checkout .dotfile repo at user root directory
-cd ~
+# 4: Checkout .dotfile repo at user home directory
+cd $HOME
 
 # if directory exists, warn but continue
-if [ -d "~/.dotfiles" ]; then
+if [ -d "$HOME/.dotfiles" ]; then
   warn "Dotfiles already exist, local copy may not be up to date with the latest."
 else
   info "Downloading dotfiles from git clone https://github.com/CrutchTheClutch/.dotfiles.git"
@@ -51,8 +51,7 @@ ok "Dotfiles checkedout locally!"
 # 5: Install HomeBrew
 info "Validating Homebrew..."
 
-which -s brew
-if [[ $? != 0 ]] ; then
+if ! which brew > /dev/null 2>&1; then
     info "Homebrew not found, installing now..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
