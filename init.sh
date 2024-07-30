@@ -4,7 +4,7 @@
 
 # Logging helper functions
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh)
+source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/init-log.sh)
 
 # 1: Get system information to determine how to proceed
 # TODO: add linux support
@@ -34,7 +34,6 @@ curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts
 curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/macos.sh | zsh
 
 # 4: Checkout .dotfile repo at user root directory
-info "Downloading .dotfiles..."
 cd ~
 
 # if directory exists, warn but continue

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Logging helper functions
-source ./log.sh
+# NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
+source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/init-log.sh)
 
 info "Validating Rosetta2..."
 
