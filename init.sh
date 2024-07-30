@@ -4,7 +4,7 @@
 
 # Logging helper functions
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/main/scripts/log.sh)
+source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh)
 
 # 1: Get system information to determine how to proceed
 # TODO: add linux support
@@ -27,7 +27,7 @@ esac
 
 # 2: Install macOS dev tools
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/main/scripts/xcode-select.sh | zsh
+curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/xcode-select.sh | zsh
 
 # 3. Checkout .dotfile repo at user root directory
 info "Downloading .dotfiles..."
