@@ -6,7 +6,7 @@ autoload -U is-at-least
 
 # Logging helper functions
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/main/scripts/log.sh)
+source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh)
 
 get_available_cli_tool_installs() {
     # Return the latest available CLI tools.
