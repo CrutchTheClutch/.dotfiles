@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/zsh
+# NOTE: Utilize zsh rather than bash due to issues with sourcing scripts
 
 # This script only supports macOS for the moment, may support linux in the future
 
@@ -27,11 +28,11 @@ esac
 
 # 2: Install macOS dev tools
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/xcode-select.sh | zsh
+source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/xcode-select.sh)
 
 # 3: Set macOS preferences
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/macos.sh | zsh
+source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/macos.sh)
 
 # 4: Checkout .dotfile repo at user root directory
 cd ~

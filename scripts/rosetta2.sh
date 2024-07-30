@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/zsh
+# NOTE: Utilize zsh rather than bash due to issues with sourcing scripts
 
 # Logging helper functions
 # NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo

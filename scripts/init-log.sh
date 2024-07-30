@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/zsh
+# NOTE: Utilize zsh rather than bash due to issues with sourcing scripts
 
 if [[ -z "$LOG_FUNCTIONS_LOADED" ]]; then
     LOG_SCRIPT_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
