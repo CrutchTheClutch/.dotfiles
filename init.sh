@@ -30,7 +30,7 @@ esac
 curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/xcode-select.sh | zsh
 
 # 3: Set macOS preferences
-#  NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
+# NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
 curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/macos.sh | zsh
 
 # 4: Checkout .dotfile repo at user root directory
