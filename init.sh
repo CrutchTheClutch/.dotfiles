@@ -48,8 +48,10 @@ if ! which brew > /dev/null 2>&1; then
 
   # Add homebrew to path on Apple Silicon machines
   if [[ cpu == *"Apple"* ]]; then
-    (echo; echo 'PATH="/opt/homebrew/bin:$PATH"') >> ~/.zshrc
+    info "Adding Homebrew to \$PATH..."
+    (echo; echo 'export PATH="/opt/homebrew/bin:$PATH"') >> ~/.zshrc
     eval "$(/opt/homebrew/bin/brew shellenv)"
+    ok "Homebrew added to \$PATH!"
   fi
 fi
 ok "Homebrew installed!"
