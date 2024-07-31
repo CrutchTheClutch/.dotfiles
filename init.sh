@@ -2,11 +2,6 @@
 # TODO: add bash support
 
 # Use external logging utility script
-#LOG_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
-#LOG_SCRIPT=$(mktemp)
-#curl -s $LOG_URL -o $LOG_SCRIPT
-#source $LOG_SCRIPT
-#rm $LOG_SCRIPT
 if [[ -z "$LOG_FUNCTIONS_LOADED" ]]; then
     LOG_SCRIPT_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
     curl -s "$LOG_SCRIPT_URL" -o /tmp/log.sh
@@ -71,7 +66,9 @@ brew upgrade
 ok "Homebrew packages upgraded!"
 
 # Install Ansible
+info "Installing Ansible..."
 brew install ansible
+ok "Ansible installed!"
 
 # Checkout .dotfiles repo and run ansible
 if [ -d "$HOME/.dotfiles" ]; then
