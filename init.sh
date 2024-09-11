@@ -6,14 +6,9 @@ if [[ -z "$LOG_FUNCTIONS_LOADED" ]]; then
     LOG_SCRIPT_PATH="$HOME/.dotfiles/scripts/log.sh"
     LOG_SCRIPT_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
 
-    if [[ -e "$LOG_SCRIPT_PATH" ]]; then
-        source "$LOG_SCRIPT_PATH"
-        ok "Locally loaded logging functions!"
-    else
-        curl -s "$LOG_SCRIPT_URL" -o "$LOG_SCRIPT_PATH"
-        source "$LOG_SCRIPT_PATH"
-        ok "Remotely loaded logging functions!"
-    fi
+     curl -s "$LOG_SCRIPT_URL" -o "$LOG_SCRIPT_PATH"
+     source "$LOG_SCRIPT_PATH"
+     ok "Loaded logging functions!"
 
     export LOG_FUNCTIONS_LOADED=true
 fi
