@@ -1,0 +1,23 @@
+---
+- name: Bootstrap macOS with Neovim, Yabai, and Kitty
+  hosts: localhost
+  tasks:
+    - name: Update Homebrew
+      homebrew:
+        update_homebrew: yes
+      register: brew_update
+
+    # - name: Install Neovim
+    #   homebrew:
+    #     name: neovim
+    #     state: present
+    #   when: brew_install.changed
+
+    # - name: Install Yabai
+    #   shell: |
+    #     brew install koekeishiya/formulae/yabai
+    #     brew services start yabai
+
+    - name: Install Kitty Terminal
+      shell: |
+        curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin

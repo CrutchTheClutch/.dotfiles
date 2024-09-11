@@ -3,9 +3,18 @@
 
 # Use external logging utility script
 if [[ -z "$LOG_FUNCTIONS_LOADED" ]]; then
+    LOG_SCRIPT_PATH="$HOME/.dotfiles/scripts/log.sh"
     LOG_SCRIPT_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
-    curl -s "$LOG_SCRIPT_URL" -o /tmp/log.sh
-    source /tmp/log.sh
+
+    if [[ -f "$LOG_SCRIPT_PATH" ]]; then
+        source "$LOG_SCRIPT_PATH"
+        ok "Locally loaded logging functions!"
+    else
+        curl -s "$LOG_SCRIPT_URL" -o "$LOG_SCRIPT_PATH"
+        source "$LOG_SCRIPT_PATH"
+        ok "Remotely loaded logging functions!"
+    fi
+
     export LOG_FUNCTIONS_LOADED=true
 fi
 
@@ -81,3 +90,5 @@ fi
 
 cd $HOME/.dotfiles
 
+# Run the Ansible playbook to bootstrap macOS
+ansible-playbook ./personal/bootstrap.yml -v
