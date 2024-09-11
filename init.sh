@@ -6,7 +6,7 @@ if [[ -z "$LOG_FUNCTIONS_LOADED" ]]; then
     LOG_SCRIPT_PATH="$HOME/.dotfiles/scripts/log.sh"
     LOG_SCRIPT_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
 
-    if [[ -f "$LOG_SCRIPT_PATH" ]]; then
+    if [[ -e "$LOG_SCRIPT_PATH" ]]; then
         source "$LOG_SCRIPT_PATH"
         ok "Locally loaded logging functions!"
     else
