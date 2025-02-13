@@ -1,78 +1,35 @@
 #!/bin/zsh
-# TODO: add bash support
 
-# Use external logging utility script
-if [[ -z "$LOG_FUNCTIONS_LOADED" ]]; then
-    LOG_SCRIPT_PATH="$HOME/.dotfiles/scripts/log.sh"
-    LOG_SCRIPT_URL="https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/log.sh"
-
-     curl -s "$LOG_SCRIPT_URL" -o "$LOG_SCRIPT_PATH"
-     source "$LOG_SCRIPT_PATH"
-     ok "Loaded logging functions!"
-
-    export LOG_FUNCTIONS_LOADED=true
-fi
-
-# Get system information to determine how to proceed
-# TODO: add linux support
-os="$(uname -s)"
-cpu="$(sysctl -n machdep.cpu.brand_string)"
-year=$(sw_vers -buildVersion | cut -c 1,2)
-
-case $os in
-  Linux*)
-    fail "Unsupported Linux distribution: ${os}"
-  ;;
-
-  Darwin*)
-    ok "Supported operating system: macOS"
-  ;;
-  
-  *)
-    fail "Unsupported operating system: ${os}"
-  ;;
-esac
-
-# Get sudo access to install all neccesary components
-info "This script requires sudo access in order to bootstrap."
-sudo -v
-# TODO: Handle when user trys to bypass password prompt (fail)
-ok "Sudo access verified!"
+## Get sudo access to install all neccesary components
+#info "This script requires sudo access in order to bootstrap."
+#sudo -v
+## TODO: Handle when user trys to bypass password prompt (fail)
+#ok "Sudo access verified!"
 
 # Install Homebrew
-info "Validating Homebrew..."
 if ! which brew > /dev/null 2>&1; then
-  info "Homebrew not found, installing..."
+  info "Installing Homebrew..."
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-  # Add homebrew to path on Apple Silicon machines
-  if [[ cpu == *"Apple"* ]]; then
-    info "Adding Homebrew to \$PATH..."
-    (echo; echo 'export PATH="/opt/homebrew/bin:$PATH"') >> ~/.zshrc
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-    ok "Homebrew added to \$PATH!"
-  fi
+  # Do I need this?
+  ## Add homebrew to path on Apple Silicon machines
+  #if [[ cpu == *"Apple"* ]]; then
+  #  info "Adding Homebrew to \$PATH..."
+  #  (echo; echo 'export PATH="/opt/homebrew/bin:$PATH"') >> ~/.zshrc
+  #  eval "$(/opt/homebrew/bin/brew shellenv)"
+  #  ok "Homebrew added to \$PATH!"
+  #fi
 fi
 ok "Homebrew installed!"
 
-# Verify Homebrew
-brew doctor
-ok "Homebrew validated!"
-
-# Update Homebrew
-info "Updating Homebrew..."
-brew update
-ok "Homebrew updated!"
-
-# Upgrade Homebrew
-info "Upgrading Homebrew packages..."
-brew upgrade
-ok "Homebrew packages upgraded!"
-
-# Install Ansible
-info "Installing Ansible..."
-brew install ansible
-ok "Ansible installed!"
+# Install Git
+if ! brew list git &>/dev/null; then
+    info "Installing Git..."
+    brew install git
+    ok "Git installed!"
+else
+    ok "Git is already installed. Continuing..."
+fi
 
 # Checkout .dotfiles repo and run ansible
 if [ -d "$HOME/.dotfiles" ]; then
@@ -85,5 +42,8 @@ fi
 
 cd $HOME/.dotfiles
 
-# Run the Ansible playbook to bootstrap macOS
-ansible-playbook ./personal/bootstrap.yml -v
+## Install Rosetta 2
+#source ./scripts/rosetta2.sh
+
+## Set up macOS defaults
+#source ./scripts/macos.sh
