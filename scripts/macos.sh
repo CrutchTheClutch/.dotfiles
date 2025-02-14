@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+CHANGED=false
+
 check_default() {
     local domain="$1"
     local key="$2"
@@ -10,6 +12,7 @@ check_default() {
     if [[ "$current" != "$expected" ]]; then
         info "Updating $key from $current to $expected..."
         defaults write "$domain" "$key" "$expected"
+        CHANGED=true
     fi
 
     ok "$description"
@@ -24,6 +27,7 @@ check_default_dict() {
     if ! defaults read "$domain" "$key" >/dev/null 2>&1; then
         info "Creating $key dictionary..."
         defaults write "$domain" "$key" -dict "$@"
+        CHANGED=true
         ok "$description"
         return
     fi
@@ -48,6 +52,7 @@ check_default_dict() {
     if [[ "$changed" = true ]]; then
         info "Updating $key dictionary values..."
         defaults write "$domain" "$key" -dict "${all_args[@]}"
+        CHANGED=true
     fi
     
     ok "$description"
@@ -73,6 +78,7 @@ check_plist() {
 
     info "Updating $key from $current to $expected..."
     /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist"
+    CHANGED=true
     ok "$description"
 }
 
@@ -87,11 +93,13 @@ check_flag() {
         if [ "$remove" = "true" ]; then
             info "Removing $flag flag from $path..."
             /usr/bin/chflags no"$flag" "$path"
+            CHANGED=true
         fi
     else
         if [ "$remove" = "false" ]; then
             info "Adding $flag flag to $path..."
             /usr/bin/chflags "$flag" "$path"
+            CHANGED=true
         fi
     fi
 
@@ -118,12 +126,14 @@ check_default "NSGlobalDomain" "com.apple.mouse.scaling" "0.875" "Set mouse scal
 check_default "NSGlobalDomain" "com.apple.sound.beep.volume" "0" "Disable system alert sound"
 check_default "NSGlobalDomain" "com.apple.sound.uiaudio.enabled" "0" "Disable UI sounds"
 check_default "NSGlobalDomain" "NSWindowResizeTime" "0.001" "Remove window resize animation"
+check_default "NSGlobalDomain" "NSAutomaticWindowAnimationsEnabled" "false" "Disable window animations"
 check_default "NSGlobalDomain" "AppleInterfaceStyle" "Dark" "Set dark interface style"
 check_default "NSGlobalDomain" "AppleAccentColor" "5" "Set accent color to purple"
 check_default "NSGlobalDomain" "AppleHighlightColor" "0.968627 0.831373 1.000000" "Set highlight color to purple"
 check_default "NSGlobalDomain" "AppleShowAllExtensions" "1" "Show filename extensions"
 check_default "NSGlobalDomain" "com.apple.springing.enabled" "1" "Enable spring loading for directories"
 check_default "NSGlobalDomain" "com.apple.springing.delay" "0" "Disable spring loading delay for directories"
+check_default "NSGlobalDomain" "ReduceMotion" "true" "Disable motion animations"
 
 ###############################################################################
 # DesktopServices                                                             #
@@ -144,6 +154,18 @@ check_default "com.apple.frameworks.diskimages" "auto-open-rw-root" "1" "Open ne
 ###############################################################################
 
 check_default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "true" "Enable AirDrop over all interfaces"
+
+###############################################################################
+# Dock                                                                        #
+###############################################################################
+
+check_default "com.apple.dock" "expose-animation-duration" "0.0" "Speed up Mission Control animations"
+check_default "com.apple.dock" "workspaces-edge-delay" "0.0" "Remove desktop edge switch animation"
+check_default "com.apple.dock" "workspace-switch-duration" "0.0" "Remove desktop switch animation"
+check_default "com.apple.dock" "autohide-delay" "0.0" "Remove dock auto-hide delay"
+check_default "com.apple.dock" "autohide-time-modifier" "0.0" "Remove dock auto-hide time modifier"
+check_default "com.apple.dock" "launchanim" "false" "Disable app launch bounce"
+check_default "com.apple.dock" "mineffect" "scale" "Change minimize effect to scale (faster than genie)"
 
 ###############################################################################
 # Finder                                                                      #
@@ -184,23 +206,21 @@ check_default_dict \
     "OpenWith" true \
     "Privileges" true
 
-ok "Applied 'Finder' preferences!"
-
 ###############################################################################
 # Kill effected applications                                                  #
 ###############################################################################
 
-for app in "SystemUIServer" \
-           "cfprefsd" \
-           "Finder" \
-           "Terminal" \
-           "Dock" \
-           "ControlCenter" \
-           "NotificationCenter"
-do
-    info "Killing ${app} to apply changes..."
-    killall "${app}" > /dev/null 2>&1
-    ok "Killed ${app}"
-done
-
-ok "System Settings updated!  Some changes may require a restart to take effect."
+if $CHANGED; then
+    for app in "SystemUIServer" \
+            "cfprefsd" \
+            "Finder" \
+            "Terminal" \
+            "Dock" \
+            "ControlCenter" \
+            "NotificationCenter"
+    do
+        info "Restarting ${app} to apply changes..."
+        killall "${app}" > /dev/null 2>&1
+    done
+    ok "System Settings updated! Some changes may require a restart to take effect."
+fi
