@@ -1,38 +1,25 @@
 #!/bin/zsh
-# TODO: add bash support
 
-# Logging helper functions
-# NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/init-log.sh)
-
-info "Validating Rosetta2..."
-
-# Determine the processor brand
-if [[ "\$(sysctl -n machdep.cpu.brand_string)" == *"Apple"* ]]; then
-    info "Apple Processor is present"
-
-    # Check if the Rosetta service is running
+# only run on m-series macs
+if is_m1; then
+    # check if rosetta service is running
     check_rosetta_status=$(pgrep oahd)
 
-    # Condition check to see if the Rosetta folder exists. This check was added
-    # because the Rosetta2 service is already running in macOS versions 11.5 and
-    # greater without Rosseta2 actually being installed.
+    # check to see if rosetta folder exists
+    # rosetta service is already running without rosetta2 being installed on macOS >=11.5
     rosetta_folder="/Library/Apple/usr/share/rosetta"
 
     if [[ -n $check_rosetta_status ]] && [[ -e $rosetta_folder ]]; then
-        ok "Rosetta2 is already installed!"
-
+        ok "Rosetta2 is already installed. Continuing..."
     else
-        warn "Rosetta2 not found."
         info "Installing Rosetta2..."
 
-        # Installs Rosetta
+        # installs rosetta2
         softwareupdate --install-rosetta --agree-to-license --verbose |
             tee -a "${LOG_PATH}"
 
         ok "Successfully installed Rosetta2!"
     fi
-
 else
-    info "Rosetta2 is not required, skipping install"
+    info "Rosetta2 is not required on intel macs. Continuing..."
 fi

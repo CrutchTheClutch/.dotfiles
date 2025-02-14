@@ -1,49 +1,85 @@
 #!/bin/zsh
 
-## Get sudo access to install all neccesary components
-#info "This script requires sudo access in order to bootstrap."
-#sudo -v
-## TODO: Handle when user trys to bypass password prompt (fail)
-#ok "Sudo access verified!"
+# logging utilities
+log() { printf "[\033[0;$1m$2\033[0m] %s\n" "$3"; }
+info() { log 96 "INFO" "$1"; }
+warn() { log 93 "WARN" "$1"; }
+error() { log 91 "FAIL" "$1"; }
+fail() { error "$1"; exit 1; }
+ok() { log 92 " OK " "$1"; }
 
-# Install Homebrew
-if ! which brew > /dev/null 2>&1; then
-  info "Installing Homebrew..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# os detection utilities
+is_osx() { [[ "$OSTYPE" == "darwin"* ]]; }
+is_m1() { [[ $(get_cpu) == *"Apple"* ]]; }
+is_linux() { [[ "$OSTYPE" == "linux"* ]]; }
 
-  # Do I need this?
-  ## Add homebrew to path on Apple Silicon machines
-  #if [[ cpu == *"Apple"* ]]; then
-  #  info "Adding Homebrew to \$PATH..."
-  #  (echo; echo 'export PATH="/opt/homebrew/bin:$PATH"') >> ~/.zshrc
-  #  eval "$(/opt/homebrew/bin/brew shellenv)"
-  #  ok "Homebrew added to \$PATH!"
-  #fi
+# system info utilities
+get_cpu() { sysctl -n machdep.cpu.brand_string; } # TODO Add linux support
+
+# Request sudo upfront
+request_sudo() {
+    info "Some operations require sudo access. Please enter your password if prompted";
+    sudo -v;
+    
+    # keep sudo alive in the background
+    (while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &)
+}
+
+# homebrew installation
+install_homebrew() {
+  if ! which brew > /dev/null 2>&1; then
+    info "Installing Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Add temporary homebrew alias for initial install
+    if is_m1; then
+      alias brew="/opt/homebrew/bin/brew";
+    else
+      alias brew="/usr/local/bin/brew";
+    fi
+
+    ok "Homebrew installed!"
+  else
+    ok "Homebrew is already installed. Continuing..."
+  fi
+}
+
+# git installation
+install_git() {
+  if ! brew list git &>/dev/null; then
+      info "Installing Git..."
+      brew install git
+      ok "Git installed!"
+  else
+      ok "Git is already installed. Continuing..."
+  fi
+}
+
+# clone repo
+clone_repo() {
+  if [ -d "$HOME/.dotfiles" ]; then
+    warn "~/.dotfiles already exists.  Local copy may not be up to date with the latest."
+  else 
+    info "Cloning .dotfiles repo..."
+    cd $HOME
+    git clone https://github.com/CrutchTheClutch/.dotfiles.git
+    ok ".dotfiles repo cloned!"
+  fi
+}
+
+# only support osx for now
+if ! is_osx; then
+  fail "This script currently only supports macOS."
 fi
-ok "Homebrew installed!"
 
-# Install Git
-if ! brew list git &>/dev/null; then
-    info "Installing Git..."
-    brew install git
-    ok "Git installed!"
-else
-    ok "Git is already installed. Continuing..."
-fi
+# request sudo upfront
+request_sudo;
 
-# Checkout .dotfiles repo and run ansible
-if [ -d "$HOME/.dotfiles" ]; then
-  warn "~/.dotfiles already exists.  Local copy may not be up to date with the latest."
-else 
-  info "Cloning .dotfiles repo..."
-  cd $HOME
-  git clone https://github.com/CrutchTheClutch/.dotfiles.git
-fi
+# install dependencies
+install_homebrew;
+install_git;
+clone_repo;
 
-cd $HOME/.dotfiles
-
-## Install Rosetta 2
-#source ./scripts/rosetta2.sh
-
-## Set up macOS defaults
-#source ./scripts/macos.sh
+# run setup scripts
+source $HOME/.dotfiles/scripts/rosetta2.sh;
+source $HOME/.dotfiles/scripts/macos.sh;

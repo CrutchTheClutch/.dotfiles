@@ -1,126 +1,207 @@
 #!/bin/zsh
-# TODO: add bash support
 
-# Logging helper functions
-# NOTE: Needs to remain a remote url since this script may get executed outside of the .dotfiles repo
-source <(curl -s https://raw.githubusercontent.com/CrutchTheClutch/.dotfiles/HEAD/scripts/init-log.sh)
+check_default() {
+    local domain="$1"
+    local key="$2"
+    local expected="$3"
+    local description="$4"
+    
+    local current=$(defaults read "$domain" "$key" 2>/dev/null)
+    if [[ "$current" != "$expected" ]]; then
+        info "Updating $key from $current to $expected..."
+        defaults write "$domain" "$key" "$expected"
+    fi
 
-info "Setting macOS System Preferences..."
+    ok "$description"
+}
 
-# Ask for the administrator password upfront
-info "Password required to modify macOS System Preferences."
-sudo -v
-ok "Password provided!  Applying preferences..."
+check_default_dict() {
+    local domain="$1"
+    local key="$2"
+    local description="$3"
+    shift 3
+    
+    if ! defaults read "$domain" "$key" >/dev/null 2>&1; then
+        info "Creating $key dictionary..."
+        defaults write "$domain" "$key" -dict "$@"
+        ok "$description"
+        return
+    fi
+    
+    local changed=false
+    local all_args=("$@")
+    
+    while (( $# >= 2 )); do
+        local dict_key="$1"
+        local expected="$2"
+        shift 2
+        
+        # Get current value by parsing the full dictionary output
+        local current=$(defaults read "$domain" "$key" | grep "$dict_key" | cut -d '=' -f2 | tr -d ' ;')
+        
+        if [[ -z "$current" ]] || [[ "$current" != "$expected" ]]; then
+            changed=true
+            break
+        fi
+    done
+    
+    if [[ "$changed" = true ]]; then
+        info "Updating $key dictionary values..."
+        defaults write "$domain" "$key" -dict "${all_args[@]}"
+    fi
+    
+    ok "$description"
+}
 
-# Close any open System Preferences panes, to prevent them from overriding
-# settings we’re about to change
-osascript -e 'tell application "System Preferences" to quit'
+check_plist() {
+    local plist="$HOME/Library/Preferences/$1"
+    local key="$2"
+    local expected="$3"
+    local description="$4"
+    
+    local current=$(/usr/libexec/PlistBuddy -c "Print $key" "$plist" 2>/dev/null)
+
+    if [[ "$current" =~ ^[0-9.]+$ ]] && [[ "$expected" =~ ^[0-9.]+$ ]]; then
+        if (( $(echo "$current == $expected" | bc -l) )); then
+            ok "$description"
+            return
+        fi
+    elif [[ "$current" == "$expected" ]]; then
+        ok "$description"
+        return
+    fi
+
+    info "Updating $key from $current to $expected..."
+    /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist"
+    ok "$description"
+}
+
+check_flag() {
+    local path="$1"
+    local flag="$2"
+    local remove="$3"        # true to remove flag, false to add flag
+    local description="$4"
+    
+    # Check if flag is present
+    if [ "$(/bin/ls -ldO "$path" | /usr/bin/grep -o "$flag")" = "$flag" ]; then
+        if [ "$remove" = "true" ]; then
+            info "Removing $flag flag from $path..."
+            /usr/bin/chflags no"$flag" "$path"
+        fi
+    else
+        if [ "$remove" = "false" ]; then
+            info "Adding $flag flag to $path..."
+            /usr/bin/chflags "$flag" "$path"
+        fi
+    fi
+
+    ok "$description"
+}
+
+# Check if System Preferences is running before attempting to quit
+if pgrep -x "System Preferences" > /dev/null; then
+    info "Closing System Preferences prior to modifying settings..."
+    osascript -e 'tell application "System Preferences" to quit'
+fi
+
+# Note: On newer macOS versions (Ventura+), it's called "System Settings"
+if pgrep -x "System Settings" > /dev/null; then
+    info "Closing System Settings prior to modifying settings..."
+    osascript -e 'tell application "System Settings" to quit'
+fi
+
+###############################################################################
+# NSGlobalDomain                                                              #
+###############################################################################
+
+check_default "NSGlobalDomain" "com.apple.mouse.scaling" "0.875" "Set mouse scaling to 0.875 (sensitivity)"
+check_default "NSGlobalDomain" "com.apple.sound.beep.volume" "0" "Disable system alert sound"
+check_default "NSGlobalDomain" "com.apple.sound.uiaudio.enabled" "0" "Disable UI sounds"
+check_default "NSGlobalDomain" "NSWindowResizeTime" "0.001" "Remove window resize animation"
+check_default "NSGlobalDomain" "AppleInterfaceStyle" "Dark" "Set dark interface style"
+check_default "NSGlobalDomain" "AppleAccentColor" "5" "Set accent color to purple"
+check_default "NSGlobalDomain" "AppleHighlightColor" "0.968627 0.831373 1.000000" "Set highlight color to purple"
+check_default "NSGlobalDomain" "AppleShowAllExtensions" "1" "Show filename extensions"
+check_default "NSGlobalDomain" "com.apple.springing.enabled" "1" "Enable spring loading for directories"
+check_default "NSGlobalDomain" "com.apple.springing.delay" "0" "Disable spring loading delay for directories"
+
+###############################################################################
+# DesktopServices                                                             #
+###############################################################################
+
+check_default "com.apple.desktopservices" "DSDontWriteNetworkStores" "1" "Disable creation of .DS_Store files on network volumes"
+check_default "com.apple.desktopservices" "DSDontWriteUSBStores" "1" "Disable creation of .DS_Store files on USB volumes"
+
+###############################################################################
+# DiskImages                                                                  #
+###############################################################################
+
+check_default "com.apple.frameworks.diskimages" "auto-open-ro-root" "1" "Open new Finder window when a read-only volume is mounted"
+check_default "com.apple.frameworks.diskimages" "auto-open-rw-root" "1" "Open new Finder window when a read-write volume is mounted"
+
+###############################################################################
+# NetworkBrowser                                                              #
+###############################################################################
+
+check_default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "true" "Enable AirDrop over all interfaces"
 
 ###############################################################################
 # Finder                                                                      #
 ###############################################################################
 
-info "Applying 'Finder' preferences..."
+check_default "com.apple.finder" "AppleShowAllFiles" "1" "Show hidden files in Finder"
+check_default "com.apple.finder" "ShowStatusBar" "1" "Show status bar in Finder"
+check_default "com.apple.finder" "ShowPathbar" "1" "Show path bar in Finder"
+check_default "com.apple.finder" "_FXShowPosixPathInTitle" "0" "Hide POSIX path in Finder title"
+check_default "com.apple.finder" "_FXSortFoldersFirst" "1" "Show folders on top when sorting by name in Finder"
+check_default "com.apple.finder" "FXDefaultSearchScope" "SCcf" "Search current folder by default in Finder"
+check_default "com.apple.finder" "OpenWindowForNewRemovableDisk" "1" "Open new Finder window when a removable volume is mounted"
+check_default "com.apple.finder" "ShowExternalHardDrivesOnDesktop" "0" "Hide external hard drives on desktop"
+check_default "com.apple.finder" "ShowHardDrivesOnDesktop" "0" "Hide hard drives on desktop"
+check_default "com.apple.finder" "ShowMountedServersOnDesktop" "0" "Hide mounted servers on desktop"
+check_default "com.apple.finder" "ShowRemovableMediaOnDesktop" "0" "Hide removable media on desktop"
+check_default "com.apple.finder" "FXPreferredViewStyle" "Nlsv" "Use list view in all Finder windows by default"
+check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on desktop"
+check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view"
+check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view (legacy)"
+check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on desktop"
+check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on standard view"
+check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on standard view (legacy)"
+check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on desktop"
+check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on standard view"
+check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on standard view (legacy)"
+check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:labelOnBottom" "true" "Show label on bottom of desktop icons"
+check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on desktop"
+check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view"
+check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view (legacy)"
+check_flag "$HOME/Library" "nohidden" "true" "~/Library folder is visible"
+check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
+check_default_dict \
+    "com.apple.finder" \
+    "FXInfoPanesExpanded" \
+    "Expand the following File Info panes: General, Open with, Sharing & Permissions" \
+    "General" true \
+    "OpenWith" true \
+    "Privileges" true
 
-# Finder: show hidden files by default
-defaults write com.apple.finder AppleShowAllFiles -bool true
-
-# Finder: show all filename extensions
-defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-
-# Finder: show status bar
-defaults write com.apple.finder ShowStatusBar -bool true
-
-# Finder: show path bar
-defaults write com.apple.finder ShowPathbar -bool true
-
-# Display full POSIX path as Finder window title
-defaults write com.apple.finder _FXShowPosixPathInTitle -bool false
-
-# Keep folders on top when sorting by name
-defaults write com.apple.finder _FXSortFoldersFirst -bool true
-
-# When performing a search, search the current folder by default
-defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
-
-# Enable spring loading for directories
-defaults write NSGlobalDomain com.apple.springing.enabled -bool true
-
-# Remove the spring loading delay for directories
-defaults write NSGlobalDomain com.apple.springing.delay -float 0
-
-# Avoid creating .DS_Store files on network or USB volumes
-defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
-
-# Automatically open a new Finder window when a volume is mounted
-defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true
-defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
-defaults write com.apple.finder OpenWindowForNewRemovableDisk -bool true
-
-# Icons for hard drives, servers, and removable media on the desktop (default: false)
-defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false
-defaults write com.apple.finder ShowHardDrivesOnDesktop         -bool false
-defaults write com.apple.finder ShowMountedServersOnDesktop     -bool false
-defaults write com.apple.finder ShowRemovableMediaOnDesktop     -bool false 
-
-# Size of icons on the desktop and in other icon views (default: 64)
-/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:iconSize 64" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:iconSize 64" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:iconSize 64" ~/Library/Preferences/com.apple.finder.plist
-
-# Grid spacing for icons on the desktop and in other icon views (default: 54)
-/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:gridSpacing 54" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:gridSpacing 54" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:gridSpacing 54" ~/Library/Preferences/com.apple.finder.plist
-
-# Show item info near icons on the desktop and in other icon views (default: false)
-/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:showItemInfo false" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:showItemInfo false" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:showItemInfo false" ~/Library/Preferences/com.apple.finder.plist
-
-# Show item info about the icons on the desktop (default: false)
-/usr/libexec/PlistBuddy -c "Set DesktopViewSettings:IconViewSettings:labelOnBottom true" ~/Library/Preferences/com.apple.finder.plist
-
-# Enable snap-to-grid for icons on the desktop and in other icon views
-/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist
-
-# Use list view in all Finder windows by default
-# Four-letter codes for the other view modes: `icnv`, `clmv`, `glyv`
-defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
-
-# Enable AirDrop over Ethernet and on unsupported Macs running Lion
-defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
-
-# Show the ~/Library folder
-chflags nohidden ~/Library
-
-# Show the /Volumes folder
-sudo chflags nohidden /Volumes
-
-# Expand the following File Info panes:
-# “General”, “Open with”, and “Sharing & Permissions”
-defaults write com.apple.finder FXInfoPanesExpanded -dict \
-	General -bool true \
-	OpenWith -bool true \
-	Privileges -bool true
-
-info "Applied 'Finder' preferences!"
+ok "Applied 'Finder' preferences!"
 
 ###############################################################################
-# Kill affected applications                                                  #
+# Kill effected applications                                                  #
 ###############################################################################
 
-info "Killing all applications that have been modified..."
-
-for app in "SystemUIServer" "cfprefsd" \
+for app in "SystemUIServer" \
+           "cfprefsd" \
            "Finder" \
-           # "Terminal" \
+           "Terminal" \
+           "Dock" \
+           "ControlCenter" \
+           "NotificationCenter"
 do
+    info "Killing ${app} to apply changes..."
     killall "${app}" > /dev/null 2>&1
+    ok "Killed ${app}"
 done
 
-ok "System Preferences updated!  Some changes may require a restart to take effect."
+ok "System Settings updated!  Some changes may require a restart to take effect."
 
