@@ -38,9 +38,9 @@ install_homebrew() {
       alias brew="/usr/local/bin/brew";
     fi
 
-    ok "Homebrew installed!"
+    ok "Homebrew installed successfully"
   else
-    ok "Homebrew is already installed. Continuing..."
+    ok "Homebrew is already installed"
   fi
 }
 
@@ -49,27 +49,27 @@ install_git() {
   if ! brew list git &>/dev/null; then
       info "Installing Git..."
       brew install git
-      ok "Git installed!"
+      ok "Git installed successfully"
   else
-      ok "Git is already installed. Continuing..."
+      ok "Git is already installed"
   fi
 }
 
 # clone repo
 clone_repo() {
   if [ -d "$HOME/.dotfiles" ]; then
-    warn "~/.dotfiles already exists.  Local copy may not be up to date with the latest."
+    warn "~/.dotfiles already exists"
   else 
     info "Cloning .dotfiles repo..."
     cd $HOME
     git clone https://github.com/CrutchTheClutch/.dotfiles.git
-    ok ".dotfiles repo cloned!"
+    ok ".dotfiles repo cloned"
   fi
 }
 
 # only support osx for now
 if ! is_osx; then
-  fail "This script currently only supports macOS."
+  fail "This script currently only supports macOS"
 fi
 
 # request sudo upfront
@@ -83,3 +83,4 @@ clone_repo;
 # run setup scripts
 source $HOME/.dotfiles/scripts/rosetta2.sh;
 source $HOME/.dotfiles/scripts/macos.sh;
+source $HOME/.dotfiles/scripts/ghostty.sh;

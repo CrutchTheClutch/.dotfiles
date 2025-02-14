@@ -18,8 +18,8 @@ if is_m1; then
         softwareupdate --install-rosetta --agree-to-license --verbose |
             tee -a "${LOG_PATH}"
 
-        ok "Successfully installed Rosetta2!"
+        ok "Rosetta2 installed successfully"
     fi
 else
-    info "Rosetta2 is not required on intel macs. Continuing..."
+    info "Rosetta2 is not required on Intel Macs"
 fi
