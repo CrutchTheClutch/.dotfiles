@@ -14,11 +14,13 @@ curl -L https://dotfiles.wrc.dev | zsh
 
 List of things I need to configure and automate for simple dev env setup (in no particular order)
 
-- [x] Xcode Dev Tools (macOS)
+- [x] Git
 - [x] Homebrew
-- [x] Ansible
-- [ ] nvim
-- [ ] yabai
+- [x] Rosetta2
+- [x] macOS defaults (system preferences) Maybe more to explore here?
+- [x] Ghostty
+- [x] Neovim
+- [x] Raycast
+- [ ] yabai?
 - [ ] skhd?
-- [ ] kitty
-- [ ] macOS defaults (system preferences)
+- [ ] Actual .dotfiles symlinking

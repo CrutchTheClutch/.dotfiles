@@ -55,14 +55,14 @@ brewi() {
     if brew list $is_cask $package &>/dev/null; then
         if brew outdated $is_cask | grep -q "^$package\$"; then
             info "Updating $package..."
-            brew upgrade $is_cask $package >/dev/null 2>&1
+            brew upgrade $is_cask $package
             ok "$package updated successfully"
         else
             ok "$package is installed and up to date"
         fi
     else
         info "Installing $package..."
-        brew install $is_cask $package >/dev/null 2>&1
+        brew install $is_cask $package --force
         ok "$package installed successfully"
     fi
 }
@@ -99,3 +99,5 @@ source $HOME/.dotfiles/scripts/homebrew.sh;
 
 # install brew packages
 brewi ghostty --cask;
+brewi neovim;
+brewi raycast --cask;
