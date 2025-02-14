@@ -32,6 +32,7 @@ install_homebrew() {
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
     # Add temporary homebrew alias for initial install
+    # we will properly add this with our .dotfiles
     if is_m1; then
       alias brew="/opt/homebrew/bin/brew";
     else
@@ -44,15 +45,26 @@ install_homebrew() {
   fi
 }
 
-# git installation
-install_git() {
-  if ! brew list git &>/dev/null; then
-      info "Installing Git..."
-      brew install git
-      ok "Git installed successfully"
-  else
-      ok "Git is already installed"
-  fi
+brewi() {
+    local package=$1
+    local is_cask=""
+    if [ "$2" = "--cask" ]; then
+        is_cask="--cask"
+    fi
+
+    if brew list $is_cask $package &>/dev/null; then
+        if brew outdated $is_cask | grep -q "^$package\$"; then
+            info "Updating $package..."
+            brew upgrade $is_cask $package >/dev/null 2>&1
+            ok "$package updated successfully"
+        else
+            ok "$package is installed and up to date"
+        fi
+    else
+        info "Installing $package..."
+        brew install $is_cask $package >/dev/null 2>&1
+        ok "$package installed successfully"
+    fi
 }
 
 # clone repo
@@ -77,10 +89,13 @@ request_sudo;
 
 # install dependencies
 install_homebrew;
-install_git;
+brewi git;
 clone_repo;
 
 # run setup scripts
 source $HOME/.dotfiles/scripts/rosetta2.sh;
 source $HOME/.dotfiles/scripts/macos.sh;
-source $HOME/.dotfiles/scripts/ghostty.sh;
+source $HOME/.dotfiles/scripts/homebrew.sh;
+
+# install brew packages
+brewi ghostty --cask;
