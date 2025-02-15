@@ -106,16 +106,25 @@ check_flag() {
     ok "$description"
 }
 
-# Check if System Preferences is running before attempting to quit
-if pgrep -x "System Preferences" > /dev/null; then
-    info "Closing System Preferences prior to modifying settings..."
-    osascript -e 'tell application "System Preferences" to quit'
-fi
+# Helper function to check if an app is running
+is_running() {
+    osascript -e "tell application \"System Events\" to (name of processes) contains \"$1\"" 2>/dev/null | grep -q "true"
+}
 
+# Helper function to quit an app
+quit_app() {
+    local app="$1"
+    osascript -e "tell application \"$app\" to quit" 2>/dev/null || killall "$app" 2>/dev/null || true
+    ok "$app killed to apply changes"
+}
+
+# Check if System Preferences is running before attempting to quit
 # Note: On newer macOS versions (Ventura+), it's called "System Settings"
-if pgrep -x "System Settings" > /dev/null; then
-    info "Closing System Settings prior to modifying settings..."
-    osascript -e 'tell application "System Settings" to quit'
+if is_running "System Preferences"; then
+    quit_app "System Preferences"
+fi
+if is_running "System Settings"; then
+    quit_app "System Settings"
 fi
 
 ###############################################################################
@@ -217,10 +226,11 @@ if $CHANGED; then
             "Terminal" \
             "Dock" \
             "ControlCenter" \
-            "NotificationCenter"
+            "NotificationCenter" \
+            "Messages" \
+            "Spotlight"
     do
-        info "Restarting ${app} to apply changes..."
-        killall "${app}" > /dev/null 2>&1
+        quit_app "$app"
     done
     ok "System Settings updated! Some changes may require a restart to take effect."
 fi
