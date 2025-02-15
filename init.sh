@@ -97,7 +97,11 @@ source $HOME/.dotfiles/scripts/rosetta2.sh;
 source $HOME/.dotfiles/scripts/macos.sh;
 source $HOME/.dotfiles/scripts/homebrew.sh;
 
+# install brew formulae
+brewi neovim;
+
 # install brew packages
 brewi ghostty --cask;
-brewi neovim;
+brewi gitkraken --cask;
 brewi raycast --cask;
+brewi superhuman --cask;
