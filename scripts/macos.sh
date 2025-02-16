@@ -367,8 +367,14 @@ default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog 
 # Symbolic Hotkeys                                                            #
 ###############################################################################
 
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" false
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" false
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
 
 ###############################################################################
 # WindowManager                                                               #
