@@ -2,46 +2,70 @@
 
 CHANGED=false
 
+# Get the type of a value
 value_type() {
     local value=$1
-    if [[ "$value" =~ ^[0-9]+$ ]]; then
-        echo int
-    elif [[ "$value" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        echo float
-    elif [[ "$value" =~ ^(true|false)$ ]]; then
-        echo bool
-    else
-        echo string
-    fi
+    if [[ "$value" =~ ^[0-9]+$ ]]; then echo int
+    elif [[ "$value" =~ ^[0-9]+\.[0-9]+$ ]]; then echo float
+    elif [[ "$value" =~ ^(true|false)$ ]]; then echo bool
+    else echo string; fi
 }
+
+# Compare two values with type awareness
 values_match() {
     local type=$1 current=$2 expected=$3
-
-    # Handle numeric values
-    if [[ "$current" =~ ^[0-9.]+$ ]] && [[ "$expected" =~ ^[0-9.]+$ ]]; then
-        [[ $(echo "$current == $expected" | bc -l) -eq 1 ]]
-        return
-    fi
     
-    if [[ "$type" == "bool" ]]; then
-        # Normalize current value
-        if [[ "$current" == "1" || "$current" == "true" || "$current" == "YES" ]]; then
-            current="true"
-        elif [[ "$current" == "0" || "$current" == "false" || "$current" == "NO" ]]; then
-            current="false"
+    case "$type" in
+        int|float)
+            [[ $(echo "$current == $expected" | bc -l) -eq 1 ]]
+            ;;
+        bool)
+            [[ "$current" =~ ^(1|true|YES)$ ]] && current="true"
+            [[ "$current" =~ ^(0|false|NO)$ ]] && current="false"
+            [[ "$expected" =~ ^(1|YES)$ ]] && expected="true"
+            [[ "$expected" =~ ^(0|NO)$ ]] && expected="false"
+            [[ "$current" == "$expected" ]]
+            ;;
+        *)  # string
+            [[ "$current" == "$expected" ]]
+            ;;
+    esac
+}
+
+# Helper function to compare dictionary values
+compare_dict_values() {
+    local domain=$1 key=$2
+    shift 2
+    
+    local changed=false
+    while (( $# >= 2 )); do
+        local dict_key=$1
+        local dict_expected=$2
+        shift 2
+        
+        # Handle nested dictionary reads
+        local dict_current
+        if [[ "$key" == *":"* ]]; then
+            # For nested keys, read the parent and extract the child value
+            local parent_key=${key%%:*}    # Get everything before first colon
+            local child_key=${key#*:}      # Get everything after first colon
+            dict_current=$(defaults read "$domain" "$parent_key" 2>/dev/null | grep -A1 "\"$dict_key\" =" | tail -1 | awk '{print $1}' | tr -d '";,')
+        else
+            # For non-nested keys, read directly
+            dict_current=$(defaults read "$domain" "$key" 2>/dev/null | grep "$dict_key" | awk -F" = " '{print $2}' | tr -d ';')
         fi
         
-        # Normalize expected value
-        if [[ "$expected" == "1" || "$expected" == "YES" ]]; then
-            expected="true"
-        elif [[ "$expected" == "0" || "$expected" == "NO" ]]; then
-            expected="false"
+        local dict_type=$(value_type "$dict_expected")
+        
+        if [[ -z "$dict_current" ]] || ! values_match "$dict_type" "$dict_current" "$dict_expected"; then
+            changed=true
+            break
         fi
-    fi
+    done
     
-    # Handle string values
-    [[ "$current" == "$expected" ]]
+    echo "$changed"
 }
+
 
 # Helper function to reset defaults, used for development
 reset_defaults() {
@@ -60,77 +84,40 @@ reset_defaults() {
     fi
 }
 
+# Set a default value
 default() {
-    local domain=$1 key=$2 description=$3 expected=$4
-    local type="string"  # Default type
-
-    # Handle the -array flag format
-    if [[ "$expected" == "-array" ]]; then
-        type="array"
-        shift 4  # Skip past the first 4 arguments
-        expected=("$@")  # Capture remaining arguments as array elements
-        
-        # Read current array values into an array, with error handling
-        local current=()
-        if output=$(defaults read "$domain" "$key" 2>/dev/null); then
-            # Convert output to array, removing parentheses and quotes
-            while IFS= read -r line; do
-                line=$(echo "$line" | sed 's/[",()]//g' | xargs)
-                [[ -n "$line" ]] && current+=("$line")
-            done <<< "$output"
-        fi
-        
-        # Compare arrays
-        local changed=false
-        if [ ${#current[@]} -ne ${#expected[@]} ]; then
-            changed=true
-        else
-            local i=0
-            while [ $i -lt ${#expected[@]} ]; do
-                if [ "${current[$i]}" != "${expected[$i]}" ]; then
-                    changed=true
-                    break
-                fi
-                i=$((i + 1))
-            done
-        fi
-        
-        if [ "$changed" = true ]; then
-            info "$(log 95 "$domain")Updating $key: ${current[@]} -> ${expected[@]}"
-            defaults write "$domain" "$key" -array "${expected[@]}"
+    local domain=$1 key=$2 description=$3 value=$4
+    local type=$(value_type "$value")
+    local current
+    
+    # Handle different value types
+    case "$value" in
+        -array)
+            shift 4
+            current=$(defaults read "$domain" "$key" 2>/dev/null)
+            [[ "$current" != "($*)" ]] && {
+                defaults write "$domain" "$key" -array "$@"
+                CHANGED=true
+            }
+            ;;
+        -dict)
+            shift 4
+            if [[ "$key" == *":"* ]]; then
+                defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "{ $1 = $2; }"
+            else
+                defaults write "$domain" "$key" -dict "$@"
+            fi
             CHANGED=true
-        fi
-    elif [[ "$expected" == "-dict" ]]; then
-        type="dict"
-        shift 4  # Skip past the first 4 arguments
-        
-        if [[ "$key" == *":"* ]]; then
-            # Handle nested keys
-            local parent_key=${key%%:*}    # Get everything before first colon
-            local child_key=${key#*:}      # Get everything after first colon
-            
-            # Update the nested dictionary
-            info "$(log 95 "$domain")Updating $key dictionary..."
-            defaults write "$domain" "$parent_key" -dict-add "$child_key" "{ $1 = $2; }"
-            CHANGED=true
-        else
-            # Handle non-nested dictionary
-            info "$(log 95 "$domain")Updating $key dictionary..."
-            defaults write "$domain" "$key" -dict "$@"
-            CHANGED=true
-        fi
-    else
-        # Handle non-array types
-        type=$(value_type "$expected")
-        
-        local current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
-        if ! values_match "$type" "$current" "$expected"; then
-            info "$(log 95 "$domain")Updating $key from $current to $expected..."
-            defaults write "$domain" "$key" "-$type" "$expected"
-            CHANGED=true
-        fi
-    fi
-
+            ;;
+        *)
+            current=$(defaults read "$domain" "$key" 2>/dev/null)
+            if ! values_match "$type" "$current" "$value"; then
+                defaults write "$domain" "$key" "-$type" "$value"
+                CHANGED=true
+            fi
+            ;;
+    esac
+    
     ok "$(log 95 "$domain")$description"
 }
 
