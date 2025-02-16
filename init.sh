@@ -7,6 +7,7 @@ warn() { log 93 "WARN" "$1"; }
 error() { log 91 "FAIL" "$1"; }
 fail() { error "$1"; exit 1; }
 ok() { log 92 " OK " "$1"; }
+debug() { log 90 "DEBUG" "$1"; }
 
 # os detection utilities
 is_osx() { [[ "$OSTYPE" == "darwin"* ]]; }
