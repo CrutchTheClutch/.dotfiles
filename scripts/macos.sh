@@ -104,22 +104,21 @@ default() {
         type="dict"
         shift 4  # Skip past the first 4 arguments
         
-        # Compare each key-value pair
-        while (( $# >= 2 )); do
-            local dict_key=$1
-            local dict_expected=$2
-            shift 2
+        if [[ "$key" == *":"* ]]; then
+            # Handle nested keys
+            local parent_key=${key%%:*}    # Get everything before first colon
+            local child_key=${key#*:}      # Get everything after first colon
             
-            # Get current value directly using defaults read with key path
-            local dict_current=$(defaults read "$domain" "$key.$dict_key" 2>/dev/null)
-            local dict_type=$(value_type "$dict_expected")
-
-            if [[ -z "$dict_current" ]] || ! values_match "$dict_type" "$dict_current" "$dict_expected"; then
-                info "$(log 95 "$domain")Updating $key.$dict_key from '$dict_current' to '$dict_expected'"
-                defaults write "$domain" "$key.$dict_key" "$dict_expected"
-                CHANGED=true
-            fi
-        done
+            # Update the nested dictionary
+            info "$(log 95 "$domain")Updating $key dictionary..."
+            defaults write "$domain" "$parent_key" -dict-add "$child_key" "{ $1 = $2; }"
+            CHANGED=true
+        else
+            # Handle non-nested dictionary
+            info "$(log 95 "$domain")Updating $key dictionary..."
+            defaults write "$domain" "$key" -dict "$@"
+            CHANGED=true
+        fi
     else
         # Handle non-array types
         type=$(value_type "$expected")
@@ -230,7 +229,7 @@ check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
 
 global() { default "NSGlobalDomain" $@; }
 
-global "AppleLanguages" "Set primary language to English" -array "en_US" "en"
+global "AppleLanguages" "Set primary language to English" -array "en-US" "en"
 global "AppleLocale" "Set locale to USA" "en_US@currency=USD"
 global "AppleMeasurementUnits" "Set measurement units to inches" "inches"
 global "AppleMetricUnits" "Disable metric system" false
@@ -260,6 +259,13 @@ global "com.apple.sound.uiaudio.enabled" "Disable UI sounds" 0
 global "com.apple.springing.delay" "Disable spring loading delay for directories" 0.001
 global "com.apple.springing.enabled" "Enable spring loading for directories" 1
 global "com.apple.trackpad.forceClick" "Enable force click on trackpad" 1
+
+###############################################################################
+# BezelServices                                                               #
+###############################################################################
+
+default "com.apple.BezelServices" "kDim" "Enable keyboard backlight auto-dim" 1
+default "com.apple.BezelServices" "kDimTime" "Disable keyboard backlight inactivity timeout" 0
 
 ###############################################################################
 # DesktopServices                                                             #
@@ -386,6 +392,13 @@ default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "Enable AirDrop over al
 ###############################################################################
 
 default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog when finished" true
+
+###############################################################################
+# Symbolic Hotkeys                                                            #
+###############################################################################
+
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" false
+default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" false
 
 ###############################################################################
 # WindowManager                                                               #
