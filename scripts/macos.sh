@@ -152,6 +152,12 @@ check_default "com.apple.desktopservices" "DSDontWriteNetworkStores" "1" "Disabl
 check_default "com.apple.desktopservices" "DSDontWriteUSBStores" "1" "Disable creation of .DS_Store files on USB volumes"
 
 ###############################################################################
+# WindowManager                                                               #
+###############################################################################
+
+check_default "com.apple.WindowManager" "GloballyEnabled" "0" "Disable Stage Manager"
+
+###############################################################################
 # DiskImages                                                                  #
 ###############################################################################
 
@@ -216,7 +222,7 @@ check_default_dict \
     "Privileges" true
 
 ###############################################################################
-# Kill effected applications                                                  #
+# Kill all                                                                    #
 ###############################################################################
 
 if $CHANGED; then
