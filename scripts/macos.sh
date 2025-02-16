@@ -174,12 +174,19 @@ check_default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "true" "Enable Ai
 # Dock                                                                        #
 ###############################################################################
 
+check_default "com.apple.dock" "persistent-apps" "()" "Remove all apps from dock"
+check_default "com.apple.dock" "persistent-others" "()" "Remove all others from dock"
+check_default "com.apple.dock" "static-only" "true" "Enable static dock"
+check_default "com.apple.dock" "tilesize" "32" "Set dock size to 32 pixels"
+check_default "com.apple.dock" "orientation" "left" "Position dock on left side"
+check_default "com.apple.dock" "show-process-indicators" "true" "Show indicators for open applications"
+check_default "com.apple.dock" "autohide" "1" "Auto-hide dock"
 check_default "com.apple.dock" "expose-animation-duration" "0.0" "Speed up Mission Control animations"
 check_default "com.apple.dock" "workspaces-edge-delay" "0.0" "Remove desktop edge switch animation"
 check_default "com.apple.dock" "workspace-switch-duration" "0.0" "Remove desktop switch animation"
 check_default "com.apple.dock" "autohide-delay" "0.0" "Remove dock auto-hide delay"
 check_default "com.apple.dock" "autohide-time-modifier" "0.0" "Remove dock auto-hide time modifier"
-check_default "com.apple.dock" "launchanim" "false" "Disable app launch bounce"
+check_default "com.apple.dock" "launchanim" "0" "Disable app launch bounce"
 check_default "com.apple.dock" "mineffect" "scale" "Change minimize effect to scale (faster than genie)"
 
 ###############################################################################
