@@ -121,36 +121,25 @@ default() {
     ok "$(log 95 "$domain")$description"
 }
 
-check_flag() {
-    local path=$1 flag=$2 remove=$3 description=$4
+set_flag() {
+    local path=$1 flag=$2 enable=$3 description=$4
+    local current=$(/usr/bin/chflags -h "$path" 2>/dev/null)
     
-    if [ "$(/bin/ls -ldO "$path" | /usr/bin/grep -o "$flag")" = "$flag" ]; then
-        if [ "$remove" = "true" ]; then
-            info "Removing $flag flag from $path..."
-            /usr/bin/chflags no"$flag" "$path"
-            CHANGED=true
-        fi
-    else
-        if [ "$remove" = "false" ]; then
-            info "Adding $flag flag to $path..."
-            /usr/bin/chflags "$flag" "$path"
-            CHANGED=true
-        fi
+    if [[ "$enable" == "true" && "$current" != *"$flag"* ]] || [[ "$enable" == "false" && "$current" == *"$flag"* ]]; then
+        info "Setting $flag flag to $enable on $path..."
+        /usr/bin/chflags ${enable:+""}"no"${enable:+""}$flag "$path"
+        CHANGED=true
     fi
-
+    
     ok "$description"
 }
 
-# Helper function to check if an app is running
-is_running() {
-    osascript -e "tell application \"System Events\" to (name of processes) contains \"$1\"" 2>/dev/null | grep -q "true"
-}
-
-# Helper function to quit an app
 quit_app() {
     local app=$1
-    osascript -e "tell application \"$app\" to quit" 2>/dev/null || killall "$app" 2>/dev/null || true
-    ok "$app killed to apply changes"
+    if osascript -e "tell application \"System Events\" to (name of processes) contains \"$1\"" 2>/dev/null | grep -q "true"; then
+        osascript -e "tell application \"$app\" to quit" 2>/dev/null || killall "$app" 2>/dev/null || true
+        ok "$app killed to apply changes"
+    fi
 }
 
 disable_system_app() {
@@ -163,23 +152,16 @@ disable_system_app() {
         return
     fi
 
-    # Kill the app if it's running
-    if is_running "${app}"; then
-        quit_app "${app}"
-    fi
+    quit_app "${app}"
 }
 
 # Check if System Preferences is running before attempting to quit
 # Note: On newer macOS versions (Ventura+), it's called "System Settings"
-if is_running "System Preferences"; then
-    quit_app "System Preferences"
-fi
-if is_running "System Settings"; then
-    quit_app "System Settings"
-fi
+quit_app "System Preferences"
+quit_app "System Settings"
 
 ###############################################################################
-# SYSTEM APPS                                                                 #
+# SYSTEM                                                                      #
 ###############################################################################
 
 SYSTEM_APPS=(
@@ -190,8 +172,8 @@ for app in "${SYSTEM_APPS[@]}"; do
     disable_system_app $app
 done
 
-check_flag "$HOME/Library" "nohidden" "true" "~/Library folder is visible"
-check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
+set_flag "$HOME/Library" "hidden" false "Show ~/Library folder by default"
+set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
 
 ###############################################################################
 # NSGlobalDomain                                                              #
