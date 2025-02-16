@@ -19,13 +19,44 @@ check_default() {
     local expected="$3"
     local description="$4"
     
-    local current=$(defaults read "$domain" "$key" 2>/dev/null)
+    local current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
     if [[ "$current" != "$expected" ]]; then
         info "$(log 95 "$domain")Updating $key from $current to $expected..."
         defaults write "$domain" "$key" "$expected"
         CHANGED=true
     fi
 
+    ok "$(log 95 "$domain")$description"
+}
+
+check_default_array() {
+    local domain="$1"
+    local key="$2"
+    local description="$3"
+    shift 3
+    local expected=("$@")
+    
+    # Read current array values into an array
+    local current=($(defaults read "$domain" "$key" | grep -v '[()]' | sed 's/,//g' | sed 's/"//g'))
+    
+    # Compare arrays
+    if [ ${#current[@]} != ${#expected[@]} ]; then
+        changed=true
+    else
+        for i in "${!current[@]}"; do
+            if [ "${current[$i]}" != "${expected[$i]}" ]; then
+                changed=true
+                break
+            fi
+        done
+    fi
+    
+    if [ "$changed" = true ]; then
+        info "$(log 95 "$domain")Updating $key array..."
+        defaults write "$domain" "$key" -array "${expected[@]}"
+        CHANGED=true
+    fi
+    
     ok "$(log 95 "$domain")$description"
 }
 
@@ -138,23 +169,28 @@ fi
 if is_running "System Settings"; then
     quit_app "System Settings"
 fi
+check_flag "$HOME/Library" "nohidden" "true" "~/Library folder is visible"
+check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
 
 ###############################################################################
 # NSGlobalDomain                                                              #
 ###############################################################################
 
+check_default "NSGlobalDomain" "AppleAccentColor" "5" "Set accent color to purple"
+check_default "NSGlobalDomain" "AppleHighlightColor" "0.968627 0.831373 1.000000" "Set highlight color to purple"
+check_default "NSGlobalDomain" "AppleInterfaceStyle" "Dark" "Set dark interface style"
+check_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" "0" "Disable automatic interface style switch"
+check_default "NSGlobalDomain" "AppleShowAllExtensions" "1" "Show filename extensions"
+check_default "NSGlobalDomain" "NSAutomaticWindowAnimationsEnabled" "false" "Disable window animations"
+check_default_array "NSGlobalDomain" "NSLinguisticDataAssetsRequested" "Set linguistic assets to American English only" "en_US"
+check_default_array "NSGlobalDomain" "NSLinguisticDataAssetsRequestedByChecker" "Set spell checker to American English only" "en_US"
+check_default "NSGlobalDomain" "NSWindowResizeTime" "0.001" "Remove window resize animation"
+check_default "NSGlobalDomain" "ReduceMotion" "true" "Disable motion animations"
 check_default "NSGlobalDomain" "com.apple.mouse.scaling" "0.875" "Set mouse scaling to 0.875 (sensitivity)"
 check_default "NSGlobalDomain" "com.apple.sound.beep.volume" "0" "Disable system alert sound"
 check_default "NSGlobalDomain" "com.apple.sound.uiaudio.enabled" "0" "Disable UI sounds"
-check_default "NSGlobalDomain" "NSWindowResizeTime" "0.001" "Remove window resize animation"
-check_default "NSGlobalDomain" "NSAutomaticWindowAnimationsEnabled" "false" "Disable window animations"
-check_default "NSGlobalDomain" "AppleInterfaceStyle" "Dark" "Set dark interface style"
-check_default "NSGlobalDomain" "AppleAccentColor" "5" "Set accent color to purple"
-check_default "NSGlobalDomain" "AppleHighlightColor" "0.968627 0.831373 1.000000" "Set highlight color to purple"
-check_default "NSGlobalDomain" "AppleShowAllExtensions" "1" "Show filename extensions"
-check_default "NSGlobalDomain" "com.apple.springing.enabled" "1" "Enable spring loading for directories"
 check_default "NSGlobalDomain" "com.apple.springing.delay" "0" "Disable spring loading delay for directories"
-check_default "NSGlobalDomain" "ReduceMotion" "true" "Disable motion animations"
+check_default "NSGlobalDomain" "com.apple.springing.enabled" "1" "Enable spring loading for directories"
 
 ###############################################################################
 # DesktopServices                                                             #
@@ -267,7 +303,9 @@ if $CHANGED; then
             "ControlCenter" \
             "NotificationCenter" \
             "Messages" \
-            "Spotlight"
+            "Spotlight" \
+            "AppleSpell" \
+            "AppleLanguages"
     do
         quit_app "$app"
     done
