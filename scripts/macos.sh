@@ -2,6 +2,17 @@
 
 CHANGED=false
 
+# Helper function to reset defaults, used for development
+reset_defaults() {
+    local domain="$1"
+    local description="$2"
+    
+    info "$(log 95 "$domain")Resetting preferences"
+    defaults delete "$domain" 2>/dev/null || true
+    ok "$(log 95 "$domain")$description"
+    CHANGED=true
+}
+
 check_default() {
     local domain="$1"
     local key="$2"
