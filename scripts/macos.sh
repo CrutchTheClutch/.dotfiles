@@ -169,6 +169,22 @@ quit_app() {
     ok "$app killed to apply changes"
 }
 
+disable_system_app() {
+    local app=$1
+    local app_path="/System/Applications/${app}.app"
+    local executable_path="$app_path/Contents/MacOS/$app"
+
+    if [ ! -e "$app_path" ]; then
+        ok "$app is not installed"
+        return
+    fi
+
+    # Kill the app if it's running
+    if is_running "${app}"; then
+        quit_app "${app}"
+    fi
+}
+
 # Check if System Preferences is running before attempting to quit
 # Note: On newer macOS versions (Ventura+), it's called "System Settings"
 if is_running "System Preferences"; then
@@ -177,6 +193,19 @@ fi
 if is_running "System Settings"; then
     quit_app "System Settings"
 fi
+
+###############################################################################
+# SYSTEM APPS                                                                 #
+###############################################################################
+
+SYSTEM_APPS=(
+    "Tips"
+)
+
+for app in "${SYSTEM_APPS[@]}"; do
+    disable_system_app $app
+done
+
 check_flag "$HOME/Library" "nohidden" "true" "~/Library folder is visible"
 check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
 
@@ -271,7 +300,7 @@ check_default "com.apple.finder" "ShowStatusBar" "1" "Show status bar in Finder"
 check_default "com.apple.finder" "_FXShowPosixPathInTitle" "0" "Hide POSIX path in Finder title"
 check_default "com.apple.finder" "_FXSortFoldersFirst" "1" "Show folders on top when sorting by name in Finder"
 
-
+# Unfinalized finder settings
 check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on desktop"
 check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view"
 check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view (legacy)"
