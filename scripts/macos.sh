@@ -2,9 +2,20 @@
 
 CHANGED=false
 
+values_match() {
+    local current=$1 expected=$2
+
+    if [[ "$current" =~ ^[0-9.]+$ ]] && [[ "$expected" =~ ^[0-9.]+$ ]]; then
+        [[ $(echo "$current == $expected" | bc -l) -eq 1 ]]
+        return
+    fi
+    
+    [[ "$current" == "$expected" ]]
+}
+
 # Helper function to reset defaults, used for development
 reset_defaults() {
-    local domain="$1"
+    local domain=$1
     local timestamp=$(date +"%Y%m%d_%H%M%S")
     local backup_file="$HOME/Desktop/${domain}_${timestamp}.backup.txt"
     
@@ -20,13 +31,10 @@ reset_defaults() {
 }
 
 check_default() {
-    local domain="$1"
-    local key="$2"
-    local expected="$3"
-    local description="$4"
+    local domain=$1 key=$2 expected=$3 description=$4
     
     local current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
-    if [[ "$current" != "$expected" ]]; then
+    if ! values_match "$current" "$expected"; then
         info "$(log 95 "$domain")Updating $key from $current to $expected..."
         defaults write "$domain" "$key" "$expected"
         CHANGED=true
@@ -36,9 +44,7 @@ check_default() {
 }
 
 check_default_array() {
-    local domain="$1"
-    local key="$2"
-    local description="$3"
+    local domain=$1 key=$2 description=$3
     shift 3
     local expected=("$@")
     local changed=false
@@ -77,9 +83,7 @@ check_default_array() {
 }
 
 check_default_dict() {
-    local domain="$1"
-    local key="$2"
-    local description="$3"
+    local domain=$1 key=$2 description=$3
     shift 3
     
     if ! defaults read "$domain" "$key" >/dev/null 2>&1; then
@@ -117,37 +121,24 @@ check_default_dict() {
 }
 
 check_plist() {
-    local domain="$1"
-    local plist="$HOME/Library/Preferences/$1"
-    local key="$2"
-    local expected="$3"
-    local description="$4"
+    local domain=$1 key=$2 expected=$3 description=$4
+    local plist="$domain.plist"
+    local plist_path="$HOME/Library/Preferences/$1"
     
-    local current=$(/usr/libexec/PlistBuddy -c "Print $key" "$plist" 2>/dev/null)
+    local current=$(/usr/libexec/PlistBuddy -c "Print $key" "$plist_path" 2>/dev/null)
 
-    if [[ "$current" =~ ^[0-9.]+$ ]] && [[ "$expected" =~ ^[0-9.]+$ ]]; then
-        if (( $(echo "$current == $expected" | bc -l) )); then
-            ok "$(log 95 "$domain")$description"
-            return
-        fi
-    elif [[ "$current" == "$expected" ]]; then
-        ok "$(log 95 "$domain")$description"
-        return
+    if ! values_match "$current" "$expected"; then
+        info "$(log 95 "$domain")Updating $key from $current to $expected..."
+        /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist_path"
+        CHANGED=true
     fi
 
-    info "$(log 95 "$domain")Updating $key from $current to $expected..."
-    /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist"
-    CHANGED=true
     ok "$(log 95 "$domain")$description"
 }
 
 check_flag() {
-    local path="$1"
-    local flag="$2"
-    local remove="$3"        # true to remove flag, false to add flag
-    local description="$4"
+    local path=$1 flag=$2 remove=$3 description=$4
     
-    # Check if flag is present
     if [ "$(/bin/ls -ldO "$path" | /usr/bin/grep -o "$flag")" = "$flag" ]; then
         if [ "$remove" = "true" ]; then
             info "Removing $flag flag from $path..."
@@ -172,7 +163,7 @@ is_running() {
 
 # Helper function to quit an app
 quit_app() {
-    local app="$1"
+    local app=$1
     osascript -e "tell application \"$app\" to quit" 2>/dev/null || killall "$app" 2>/dev/null || true
     ok "$app killed to apply changes"
 }
@@ -212,7 +203,7 @@ check_default "NSGlobalDomain" "ReduceMotion" "true" "Disable motion animations"
 check_default "NSGlobalDomain" "com.apple.mouse.scaling" "0.875" "Set mouse scaling to 0.875 (sensitivity)"
 check_default "NSGlobalDomain" "com.apple.sound.beep.volume" "0" "Disable system alert sound"
 check_default "NSGlobalDomain" "com.apple.sound.uiaudio.enabled" "0" "Disable UI sounds"
-check_default "NSGlobalDomain" "com.apple.springing.delay" "0" "Disable spring loading delay for directories"
+check_default "NSGlobalDomain" "com.apple.springing.delay" "0.001" "Disable spring loading delay for directories"
 check_default "NSGlobalDomain" "com.apple.springing.enabled" "1" "Enable spring loading for directories"
 check_default "NSGlobalDomain" "com.apple.trackpad.forceClick" "1" "Enable force click on trackpad"
 
@@ -236,7 +227,6 @@ check_default "com.apple.dock" "mineffect" "scale" "Change minimize effect to sc
 check_default "com.apple.dock" "orientation" "left" "Position dock on left side"
 check_default "com.apple.dock" "persistent-apps" "()" "Remove all apps from dock"
 check_default "com.apple.dock" "persistent-others" "()" "Remove all others from dock"
-check_default "com.apple.dock" "recent-apps" "()" "Remove all recent apps from dock"
 check_default "com.apple.dock" "show-process-indicators" "1" "Show indicators for open applications"
 check_default "com.apple.dock" "show-recents" "0" "Disable recent applications"
 check_default "com.apple.dock" "springboard-hide-duration" "0" "Remove Launchpad hide animation"
@@ -260,17 +250,8 @@ check_default "com.apple.dock" "wvous-tr-modifier" "0" "Remove top-right hot cor
 ###############################################################################
 
 check_default "com.apple.finder" "AppleShowAllFiles" "1" "Show hidden files in Finder"
-check_default "com.apple.finder" "ShowStatusBar" "1" "Show status bar in Finder"
-check_default "com.apple.finder" "ShowPathbar" "1" "Show path bar in Finder"
-check_default "com.apple.finder" "_FXShowPosixPathInTitle" "0" "Hide POSIX path in Finder title"
-check_default "com.apple.finder" "_FXSortFoldersFirst" "1" "Show folders on top when sorting by name in Finder"
+check_default "com.apple.finder" "DisableAllAnimations" "1" "Disable Finder animations"
 check_default "com.apple.finder" "FXDefaultSearchScope" "SCcf" "Search current folder by default in Finder"
-check_default "com.apple.finder" "OpenWindowForNewRemovableDisk" "1" "Open new Finder window when a removable volume is mounted"
-check_default "com.apple.finder" "ShowExternalHardDrivesOnDesktop" "0" "Hide external hard drives on desktop"
-check_default "com.apple.finder" "ShowHardDrivesOnDesktop" "0" "Hide hard drives on desktop"
-check_default "com.apple.finder" "ShowMountedServersOnDesktop" "0" "Hide mounted servers on desktop"
-check_default "com.apple.finder" "ShowRemovableMediaOnDesktop" "0" "Hide removable media on desktop"
-check_default "com.apple.finder" "FXPreferredViewStyle" "Nlsv" "Use list view in all Finder windows by default"
 check_default_dict \
     "com.apple.finder" \
     "FXInfoPanesExpanded" \
@@ -278,20 +259,31 @@ check_default_dict \
     "General" true \
     "OpenWith" true \
     "Privileges" true
+check_default "com.apple.finder" "FXPreferredViewStyle" "Nlsv" "Use list view in all Finder windows by default"
+check_default "com.apple.finder" "OpenWindowForNewRemovableDisk" "1" "Open new Finder window when a removable volume is mounted"
+check_default "com.apple.finder" "ShowExternalHardDrivesOnDesktop" "0" "Hide external hard drives on desktop"
+check_default "com.apple.finder" "ShowHardDrivesOnDesktop" "0" "Hide hard drives on desktop"
+check_default "com.apple.finder" "ShowMountedServersOnDesktop" "0" "Hide mounted servers on desktop"
+check_default "com.apple.finder" "ShowPathbar" "1" "Show path bar in Finder"
+check_default "com.apple.finder" "ShowRemovableMediaOnDesktop" "0" "Hide removable media on desktop"
+check_default "com.apple.finder" "ShowStatusBar" "1" "Show status bar in Finder"
+check_default "com.apple.finder" "_FXShowPosixPathInTitle" "0" "Hide POSIX path in Finder title"
+check_default "com.apple.finder" "_FXSortFoldersFirst" "1" "Show folders on top when sorting by name in Finder"
 
-check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on desktop"
-check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view"
-check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view (legacy)"
-check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on desktop"
-check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on standard view"
-check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on standard view (legacy)"
-check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on desktop"
-check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on standard view"
-check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on standard view (legacy)"
-check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:labelOnBottom" "true" "Show label on bottom of desktop icons"
-check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on desktop"
-check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view"
-check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view (legacy)"
+
+check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on desktop"
+check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view"
+check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view (legacy)"
+check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on desktop"
+check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on standard view"
+check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:gridSpacing" "54" "Grid spacing is 54px on standard view (legacy)"
+check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on desktop"
+check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on standard view"
+check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:showItemInfo" "false" "Hide item info on standard view (legacy)"
+check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:labelOnBottom" "true" "Show label on bottom of desktop icons"
+check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on desktop"
+check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view"
+check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view (legacy)"
 
 
 ###############################################################################
