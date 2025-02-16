@@ -5,12 +5,18 @@ CHANGED=false
 # Helper function to reset defaults, used for development
 reset_defaults() {
     local domain="$1"
-    local description="$2"
+    local timestamp=$(date +"%Y%m%d_%H%M%S")
+    local backup_file="$HOME/Desktop/${domain}_${timestamp}.backup.txt"
     
-    info "$(log 95 "$domain")Resetting preferences"
-    defaults delete "$domain" 2>/dev/null || true
-    ok "$(log 95 "$domain")$description"
-    CHANGED=true
+    info "$(log 95 "$domain")Backing up preferences to $backup_file"
+    if defaults read "$domain" > "$backup_file"; then
+        info "$(log 95 "$domain")Resetting preferences"
+        defaults delete "$domain"
+        ok "$(log 95 "$domain")Reset all settings to defaults"
+        CHANGED=true
+    else
+        warn "$(log 95 "$domain")Failed to backup preferences, skipping reset"
+    fi
 }
 
 check_default() {
@@ -35,19 +41,29 @@ check_default_array() {
     local description="$3"
     shift 3
     local expected=("$@")
+    local changed=false
     
-    # Read current array values into an array
-    local current=($(defaults read "$domain" "$key" | grep -v '[()]' | sed 's/,//g' | sed 's/"//g'))
+    # Read current array values into an array, with error handling
+    local current=()
+    if output=$(defaults read "$domain" "$key" 2>/dev/null); then
+        # Convert output to array, removing parentheses and quotes
+        while IFS= read -r line; do
+            line=$(echo "$line" | sed 's/[",()]//g' | xargs)
+            [[ -n "$line" ]] && current+=("$line")
+        done <<< "$output"
+    fi
     
     # Compare arrays
-    if [ ${#current[@]} != ${#expected[@]} ]; then
+    if [ ${#current[@]} -ne ${#expected[@]} ]; then
         changed=true
     else
-        for i in "${!current[@]}"; do
+        local i=0
+        while [ $i -lt ${#expected[@]} ]; do
             if [ "${current[$i]}" != "${expected[$i]}" ]; then
                 changed=true
                 break
             fi
+            i=$((i + 1))
         done
     fi
     
