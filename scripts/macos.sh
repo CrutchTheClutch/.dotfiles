@@ -228,99 +228,109 @@ check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
 # NSGlobalDomain                                                              #
 ###############################################################################
 
-check_default "NSGlobalDomain" "AppleAccentColor" "5" "Set accent color to purple"
-check_default "NSGlobalDomain" "AppleAntiAliasingThreshold" "4" "Set anti-aliasing threshold to 4"
-check_default "NSGlobalDomain" "AppleHighlightColor" "0.968627 0.831373 1.000000" "Set highlight color to purple"
-check_default "NSGlobalDomain" "AppleInterfaceStyle" "Dark" "Set dark interface style"
-check_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" 0 "Disable automatic interface style switch"
-check_default "NSGlobalDomain" "AppleKeyboardUIMode" 3 "Set keyboard UI mode to full control"
-check_default "NSGlobalDomain" "AppleMenuBarVisibleInFullscreen" 0 "Disable menu bar in fullscreen"
-check_default "NSGlobalDomain" "AppleMiniaturizeOnDoubleClick" 0 "Disable miniaturize on double click"
-check_default "NSGlobalDomain" "AppleReduceDesktopTinting" 0 "Enable desktop tinting"
-check_default "NSGlobalDomain" "AppleShowAllExtensions" 1 "Show filename extensions"
-check_default "NSGlobalDomain" "NSAutomaticWindowAnimationsEnabled" false "Disable window animations"
-check_default_array "NSGlobalDomain" "NSLinguisticDataAssetsRequested" "Set linguistic assets to American English only" "en_US"
-check_default_array "NSGlobalDomain" "NSLinguisticDataAssetsRequestedByChecker" "Set spell checker to American English only" "en_US"
-check_default "NSGlobalDomain" "NSWindowResizeTime" 0.001 "Remove window resize animation"
-check_default "NSGlobalDomain" "NavPanelFileListModeForOpenMode" 2 "Show column view in open mode"
-check_default "NSGlobalDomain" "NavPanelFileListModeForSaveMode" 2 "Show column view in save mode"
-check_default "NSGlobalDomain" "ReduceMotion" true "Disable motion animations"
-check_default "NSGlobalDomain" "com.apple.mouse.scaling" 0.875 "Set mouse scaling to 0.875 (sensitivity)"
-check_default "NSGlobalDomain" "com.apple.sound.beep.volume" 0 "Disable system alert sound"
-check_default "NSGlobalDomain" "com.apple.sound.uiaudio.enabled" 0 "Disable UI sounds"
-check_default "NSGlobalDomain" "com.apple.springing.delay" 0.001 "Disable spring loading delay for directories"
-check_default "NSGlobalDomain" "com.apple.springing.enabled" 1 "Enable spring loading for directories"
-check_default "NSGlobalDomain" "com.apple.trackpad.forceClick" 1 "Enable force click on trackpad"
+global() { default "NSGlobalDomain" $@; }
+
+global "AppleLanguages" "Set primary language to English" -array "en_US" "en"
+global "AppleLocale" "Set locale to USA" "en_US@currency=USD"
+global "AppleMeasurementUnits" "Set measurement units to inches" "inches"
+global "AppleMetricUnits" "Disable metric system" false
+global "AppleAccentColor" "Set accent color to purple" "5"
+global "AppleAntiAliasingThreshold" "Set anti-aliasing threshold to 4" "4"
+global "AppleHighlightColor" "Set highlight color to purple" "0.968627 0.831373 1.000000"
+global "AppleInterfaceStyle" "Set dark interface style" "Dark"
+global "AppleInterfaceStyleSwitchesAutomatically" "Disable automatic interface style switch" 0
+global "AppleKeyboardUIMode" "Set keyboard UI mode to full control"  3
+global "AppleMenuBarVisibleInFullscreen" "Disable menu bar in fullscreen"  0
+global "AppleMiniaturizeOnDoubleClick" "Disable miniaturize on double click" 0
+global "AppleReduceDesktopTinting" "Enable desktop tinting" 0
+global "AppleShowAllExtensions" "Show filename extensions" 1
+global "NSAutomaticWindowAnimationsEnabled" "Disable window animations" false
+global "NavPanelFileListModeForOpenMode" "Show column view in open mode" 2
+global "NavPanelFileListModeForSaveMode" "Show column view in save mode" 2
+global "PMPrintingExpandedStateForPrint" "Expand print panel by default (legacy)" true
+global "PMPrintingExpandedStateForPrint2" "Expand print panel by default" true
+global "NSNavPanelExpandedStateForSaveMode" "Expand save panel by default (legacy)" true
+global "NSNavPanelExpandedStateForSaveMode2" "Expand save panel by default" true
+global "NSTableViewDefaultSizeMode" "Set table view default size to medium" 2
+global "NSWindowResizeTime" "Remove window resize animation" 0.001
+global "ReduceMotion" "Disable motion animations" true
+global "com.apple.mouse.scaling" "Set mouse scaling to 0.875 (sensitivity)" 0.875
+global "com.apple.sound.beep.volume" "Disable system alert sound" 0
+global "com.apple.sound.uiaudio.enabled" "Disable UI sounds" 0
+global "com.apple.springing.delay" "Disable spring loading delay for directories" 0.001
+global "com.apple.springing.enabled" "Enable spring loading for directories" 1
+global "com.apple.trackpad.forceClick" "Enable force click on trackpad" 1
 
 ###############################################################################
 # DesktopServices                                                             #
 ###############################################################################
 
-check_default "com.apple.desktopservices" "DSDontWriteNetworkStores" 1 "Disable creation of .DS_Store files on network volumes"
-check_default "com.apple.desktopservices" "DSDontWriteUSBStores" 1 "Disable creation of .DS_Store files on USB volumes"
+default "com.apple.desktopservices" "DSDontWriteNetworkStores" "Disable creation of .DS_Store files on network volumes" 1
+default "com.apple.desktopservices" "DSDontWriteUSBStores" "Disable creation of .DS_Store files on USB volumes" 1
 
 ###############################################################################
 # Dock                                                                        #
 ###############################################################################
 
-check_default "com.apple.dock" "auto-space-switching-enabled" 0 "Disable auto switching to Space with open windows for an application"
-check_default "com.apple.dock" "autohide" 1 "Auto-hide dock"
-check_default "com.apple.dock" "autohide-delay" 0.0 "Remove dock auto-hide delay"
-check_default "com.apple.dock" "autohide-time-modifier" 0.0 "Remove dock auto-hide time modifier"
-check_default "com.apple.dock" "expose-animation-duration" 0.0 "Speed up Mission Control animations"
-check_default "com.apple.dock" "expose-group-by-app" 0 "Disable grouping windows by application in Mission Control"
-check_default "com.apple.dock" "launchanim" 0 "Disable app launch bounce"
-check_default "com.apple.dock" "magnification" 0 "Disable magnification"
-check_default "com.apple.dock" "mineffect" "scale" "Change minimize effect to scale (faster than genie)"
-check_default "com.apple.dock" "minimize-to-application" 0 "Minimize windows into application icon"
-check_default "com.apple.dock" "mouse-over-hilite-stack" 0 "Disable drag windows to top of screen to enter Mission Control"
-check_default "com.apple.dock" "mru-spaces" 0 "Disable automatically rearrange Spaces based on most recent use"
-check_default "com.apple.dock" "orientation" "left" "Position dock on left side"
-check_default "com.apple.dock" "persistent-apps" "()" "Remove all apps from dock"
-check_default "com.apple.dock" "persistent-others" "()" "Remove all others from dock"
-check_default "com.apple.dock" "show-process-indicators" 1 "Show indicators for open applications"
-check_default "com.apple.dock" "show-recents" 0 "Disable recent applications"
-check_default "com.apple.dock" "spans-displays" 1 "Enable separate Spaces for each display"
-check_default "com.apple.dock" "springboard-hide-duration" 0 "Remove Launchpad hide animation"
-check_default "com.apple.dock" "springboard-show-duration" 0 "Remove Launchpad show animation"
-check_default "com.apple.dock" "springboard-page-duration" 0 "Remove Launchpad page turning animation"
-check_default "com.apple.dock" "static-only" true "Enable static dock"
-check_default "com.apple.dock" "tilesize" 32 "Set dock size to 32 pixels"
-check_default "com.apple.dock" "workspace-switch-duration" 0.0 "Remove desktop switch animation"
-check_default "com.apple.dock" "workspaces-edge-delay" 0.0 "Remove desktop edge switch animation"
-check_default "com.apple.dock" "wvous-bl-corner" 0 "Disable bottom-left hot corner"
-check_default "com.apple.dock" "wvous-bl-modifier" 0 "Remove bottom-left hot corner modifier"
-check_default "com.apple.dock" "wvous-br-corner" 0 "Disable bottom-right hot corner"
-check_default "com.apple.dock" "wvous-br-modifier" 0 "Remove bottom-right hot corner modifier"
-check_default "com.apple.dock" "wvous-tl-corner" 0 "Disable top-left hot corner"
-check_default "com.apple.dock" "wvous-tl-modifier" 0 "Remove top-left hot corner modifier"
-check_default "com.apple.dock" "wvous-tr-corner" 0 "Disable top-right hot corner"
-check_default "com.apple.dock" "wvous-tr-modifier" 0 "Remove top-right hot corner modifier"
+default "com.apple.dock" "auto-space-switching-enabled" "Disable auto switching to Space with open windows for an application" 0
+default "com.apple.dock" "autohide" "Auto-hide dock" 1
+default "com.apple.dock" "autohide-delay" "Remove dock auto-hide delay" 0.0
+default "com.apple.dock" "autohide-time-modifier" "Remove dock auto-hide time modifier" 0.0
+default "com.apple.dock" "expose-animation-duration" "Speed up Mission Control animations" 0.0
+default "com.apple.dock" "expose-group-by-app" "Disable grouping windows by application in Mission Control" 0
+default "com.apple.dock" "launchanim" "Disable app launch bounce" 0
+default "com.apple.dock" "magnification" "Disable magnification" 0
+default "com.apple.dock" "mineffect" "Change minimize effect to scale (faster than genie)" "scale"
+default "com.apple.dock" "minimize-to-application" "Minimize windows into application icon" 0
+default "com.apple.dock" "mouse-over-hilite-stack" "Disable drag windows to top of screen to enter Mission Control" 0
+default "com.apple.dock" "mru-spaces" "Disable automatically rearrange Spaces based on most recent use" 0
+default "com.apple.dock" "orientation" "Position dock on left side" "left"
+default "com.apple.dock" "persistent-apps" "Remove all apps from dock" "()"
+default "com.apple.dock" "persistent-others" "Remove all others from dock" "()"
+default "com.apple.dock" "show-process-indicators" "Show indicators for open applications" 1
+default "com.apple.dock" "show-recents" "Disable recent applications" 0
+default "com.apple.dock" "spans-displays" "Enable separate Spaces for each display" 1
+default "com.apple.dock" "springboard-hide-duration" "Remove Launchpad hide animation" 0
+default "com.apple.dock" "springboard-show-duration" "Remove Launchpad show animation" 0
+default "com.apple.dock" "springboard-page-duration" "Remove Launchpad page turning animation" 0
+default "com.apple.dock" "static-only" "Enable static dock" true
+default "com.apple.dock" "tilesize" "Set dock size to 32 pixels" 32
+default "com.apple.dock" "workspace-switch-duration" "Remove desktop switch animation" 0.0
+default "com.apple.dock" "workspaces-edge-delay" "Remove desktop edge switch animation" 0.0
+default "com.apple.dock" "wvous-bl-corner" "Disable bottom-left hot corner" 0
+default "com.apple.dock" "wvous-bl-modifier" "Remove bottom-left hot corner modifier" 0
+default "com.apple.dock" "wvous-br-corner" "Disable bottom-right hot corner" 0
+default "com.apple.dock" "wvous-br-modifier" "Remove bottom-right hot corner modifier" 0
+default "com.apple.dock" "wvous-tl-corner" "Disable top-left hot corner" 0
+default "com.apple.dock" "wvous-tl-modifier" "Remove top-left hot corner modifier" 0
+default "com.apple.dock" "wvous-tr-corner" "Disable top-right hot corner" 0
+default "com.apple.dock" "wvous-tr-modifier" "Remove top-right hot corner modifier" 0
 
 ###############################################################################
 # Finder                                                                      #
 ###############################################################################
 
-check_default "com.apple.finder" "AppleShowAllFiles" 1 "Show hidden files in Finder"
-check_default "com.apple.finder" "DisableAllAnimations" 1 "Disable Finder animations"
-check_default "com.apple.finder" "FXDefaultSearchScope" "SCcf" "Search current folder by default in Finder"
-check_default_dict \
-    "com.apple.finder" \
-    "FXInfoPanesExpanded" \
+finder() { default "com.apple.finder" $@; }
+
+finder "AppleShowAllFiles" "Show hidden files in Finder" 1
+finder "DisableAllAnimations" "Disable Finder animations" 1
+finder "FXDefaultSearchScope" "Search current folder by default in Finder" "SCcf"
+finder "FXInfoPanesExpanded" \
     "Expand the following File Info panes: General, Open with, Sharing & Permissions" \
+    "-dict" \
     "General" true \
     "OpenWith" true \
     "Privileges" true
-check_default "com.apple.finder" "FXPreferredViewStyle" "Nlsv" "Use list view in all Finder windows by default"
-check_default "com.apple.finder" "OpenWindowForNewRemovableDisk" 1 "Open new Finder window when a removable volume is mounted"
-check_default "com.apple.finder" "ShowExternalHardDrivesOnDesktop" 0 "Hide external hard drives on desktop"
-check_default "com.apple.finder" "ShowHardDrivesOnDesktop" 0 "Hide hard drives on desktop"
-check_default "com.apple.finder" "ShowMountedServersOnDesktop" 0 "Hide mounted servers on desktop"
-check_default "com.apple.finder" "ShowPathbar" 1 "Show path bar in Finder"
-check_default "com.apple.finder" "ShowRemovableMediaOnDesktop" 0 "Hide removable media on desktop"
-check_default "com.apple.finder" "ShowStatusBar" 1 "Show status bar in Finder"
-check_default "com.apple.finder" "_FXShowPosixPathInTitle" 0 "Hide POSIX path in Finder title"
-check_default "com.apple.finder" "_FXSortFoldersFirst" 1 "Show folders on top when sorting by name in Finder"
+finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" "Nlsv"
+finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1
+finder "ShowExternalHardDrivesOnDesktop" "Hide external hard drives on desktop" 0
+finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" 0
+finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" 0
+finder "ShowPathbar" "Show path bar in Finder" 1
+finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" 0
+finder "ShowStatusBar" "Show status bar in Finder" 1
+finder "_FXShowPosixPathInTitle" "Hide POSIX path in Finder title" 0
+finder "_FXSortFoldersFirst" "Show folders on top when sorting by name in Finder" 1
 
 # Unfinalized finder settings
 check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:iconSize" 64 "Icon size is 64px on desktop"
@@ -342,28 +352,46 @@ check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:arrangeBy"
 # DiskImages                                                                  #
 ###############################################################################
 
-check_default "com.apple.frameworks.diskimages" "auto-open-ro-root" 1 "Open new Finder window when a read-only volume is mounted"
-check_default "com.apple.frameworks.diskimages" "auto-open-rw-root" 1 "Open new Finder window when a read-write volume is mounted"
+default "com.apple.frameworks.diskimages" "auto-open-ro-root" "Open new Finder window when a read-only volume is mounted" 1
+default "com.apple.frameworks.diskimages" "auto-open-rw-root" "Open new Finder window when a read-write volume is mounted" 1
 
 ###############################################################################
-# Clock                                                                       #
+# Help Viewer                                                                 #
 ###############################################################################
 
-check_default "com.apple.menuextra.clock" "FlashDateSeparators" 1 "Enable flash date separators"
-check_default "com.apple.menuextra.clock" "ShowDate" 1 "Show date in clock"
-check_default "com.apple.menuextra.clock" "ShowDayOfWeek" 1 "Show day of week in clock"
+default "com.apple.helpviewer" "DevMode" "Show Help Viewer content in standard windows" 1
+
+###############################################################################
+# LaunchServices                                                              #
+###############################################################################
+
+default "com.apple.LaunchServices" "LSQuarantine" "Disable quarantine for downloaded files" false
+
+###############################################################################
+# Menu Extra                                                                  #
+###############################################################################
+
+default "com.apple.menuextra.clock" "FlashDateSeparators" "Enable flash date separators" 1
+default "com.apple.menuextra.clock" "ShowDate" "Show date in clock" 1
+default "com.apple.menuextra.clock" "ShowDayOfWeek" "Show day of week in clock" 1
 
 ###############################################################################
 # NetworkBrowser                                                              #
 ###############################################################################
 
-check_default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "true" "Enable AirDrop over all interfaces"
+default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "Enable AirDrop over all interfaces" true
+
+###############################################################################
+# Print                                                                       #
+###############################################################################
+
+default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog when finished" true
 
 ###############################################################################
 # WindowManager                                                               #
 ###############################################################################
 
-check_default "com.apple.WindowManager" "GloballyEnabled" 0 "Disable Stage Manager"
+default "com.apple.WindowManager" "GloballyEnabled" "Disable Stage Manager" 0
 
 ###############################################################################
 # Spotlight                                                                   #
