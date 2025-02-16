@@ -2,13 +2,41 @@
 
 CHANGED=false
 
+value_type() {
+    local value=$1
+    if [[ "$value" =~ ^[0-9]+$ ]]; then
+        echo int
+    elif [[ "$value" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        echo float
+    elif [[ "$value" =~ ^(true|false)$ ]]; then
+        echo bool
+    else
+        echo string
+    fi
+}
 values_match() {
-    local current=$1 expected=$2
+    local type=$1 current=$2 expected=$3
 
     # Handle numeric values
     if [[ "$current" =~ ^[0-9.]+$ ]] && [[ "$expected" =~ ^[0-9.]+$ ]]; then
         [[ $(echo "$current == $expected" | bc -l) -eq 1 ]]
         return
+    fi
+    
+    if [[ "$type" == "bool" ]]; then
+        # Normalize current value
+        if [[ "$current" == "1" || "$current" == "true" || "$current" == "YES" ]]; then
+            current="true"
+        elif [[ "$current" == "0" || "$current" == "false" || "$current" == "NO" ]]; then
+            current="false"
+        fi
+        
+        # Normalize expected value
+        if [[ "$expected" == "1" || "$expected" == "YES" ]]; then
+            expected="true"
+        elif [[ "$expected" == "0" || "$expected" == "NO" ]]; then
+            expected="false"
+        fi
     fi
     
     # Handle string values
@@ -32,103 +60,78 @@ reset_defaults() {
     fi
 }
 
-check_default() {
-    local domain=$1 key=$2 expected=$3 description=$4
+default() {
+    local domain=$1 key=$2 description=$3 expected=$4
     local type="string"  # Default type
-    
-    # Determine type based on expected value
-    if [[ "$expected" =~ ^[0-9]+$ ]]; then
-        type="int"
-    elif [[ "$expected" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        type="float"
-    elif [[ "$expected" =~ ^(true|false)$ ]]; then
-        type="bool"
-    fi
-    
-    local current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
-    if ! values_match "$current" "$expected"; then
-        info "$(log 95 "$domain")Updating $key from $current to $expected..."
-        defaults write "$domain" "$key" "-$type" "$expected"
-        CHANGED=true
-    fi
 
-    ok "$(log 95 "$domain")$description"
-}
-
-check_default_array() {
-    local domain=$1 key=$2 description=$3
-    shift 3
-    local expected=("$@")
-    local changed=false
-    
-    # Read current array values into an array, with error handling
-    local current=()
-    if output=$(defaults read "$domain" "$key" 2>/dev/null); then
-        # Convert output to array, removing parentheses and quotes
-        while IFS= read -r line; do
-            line=$(echo "$line" | sed 's/[",()]//g' | xargs)
-            [[ -n "$line" ]] && current+=("$line")
-        done <<< "$output"
-    fi
-    
-    # Compare arrays
-    if [ ${#current[@]} -ne ${#expected[@]} ]; then
-        changed=true
-    else
-        local i=0
-        while [ $i -lt ${#expected[@]} ]; do
-            if [ "${current[$i]}" != "${expected[$i]}" ]; then
-                changed=true
-                break
-            fi
-            i=$((i + 1))
-        done
-    fi
-    
-    if [ "$changed" = true ]; then
-        info "$(log 95 "$domain")Updating $key array..."
-        defaults write "$domain" "$key" -array "${expected[@]}"
-        CHANGED=true
-    fi
-    
-    ok "$(log 95 "$domain")$description"
-}
-
-check_default_dict() {
-    local domain=$1 key=$2 description=$3
-    shift 3
-    
-    if ! defaults read "$domain" "$key" >/dev/null 2>&1; then
-        info "$(log 95 "$domain")Creating $key dictionary..."
-        defaults write "$domain" "$key" -dict "$@"
-        CHANGED=true
-        ok "$(log 95 "$domain")$description"
-        return
-    fi
-    
-    local changed=false
-    local all_args=("$@")
-    
-    while (( $# >= 2 )); do
-        local dict_key="$1"
-        local expected="$2"
-        shift 2
+    # Handle the -array flag format
+    if [[ "$expected" == "-array" ]]; then
+        type="array"
+        shift 4  # Skip past the first 4 arguments
+        expected=("$@")  # Capture remaining arguments as array elements
         
-        # Get current value by parsing the full dictionary output
-        local current=$(defaults read "$domain" "$key" | grep "$dict_key" | cut -d '=' -f2 | tr -d ' ;')
-        
-        if [[ -z "$current" ]] || [[ "$current" != "$expected" ]]; then
-            changed=true
-            break
+        # Read current array values into an array, with error handling
+        local current=()
+        if output=$(defaults read "$domain" "$key" 2>/dev/null); then
+            # Convert output to array, removing parentheses and quotes
+            while IFS= read -r line; do
+                line=$(echo "$line" | sed 's/[",()]//g' | xargs)
+                [[ -n "$line" ]] && current+=("$line")
+            done <<< "$output"
         fi
-    done
-    
-    if [[ "$changed" = true ]]; then
-        info "$(log 95 "$domain")Updating $key dictionary values..."
-        defaults write "$domain" "$key" -dict "${all_args[@]}"
-        CHANGED=true
+        
+        # Compare arrays
+        local changed=false
+        if [ ${#current[@]} -ne ${#expected[@]} ]; then
+            changed=true
+        else
+            local i=0
+            while [ $i -lt ${#expected[@]} ]; do
+                if [ "${current[$i]}" != "${expected[$i]}" ]; then
+                    changed=true
+                    break
+                fi
+                i=$((i + 1))
+            done
+        fi
+        
+        if [ "$changed" = true ]; then
+            info "$(log 95 "$domain")Updating $key: ${current[@]} -> ${expected[@]}"
+            defaults write "$domain" "$key" -array "${expected[@]}"
+            CHANGED=true
+        fi
+    elif [[ "$expected" == "-dict" ]]; then
+        type="dict"
+        shift 4  # Skip past the first 4 arguments
+        
+        # Compare each key-value pair
+        while (( $# >= 2 )); do
+            local dict_key=$1
+            local dict_expected=$2
+            shift 2
+            
+            # Get current value directly using defaults read with key path
+            local dict_current=$(defaults read "$domain" "$key.$dict_key" 2>/dev/null)
+            local dict_type=$(value_type "$dict_expected")
+
+            if [[ -z "$dict_current" ]] || ! values_match "$dict_type" "$dict_current" "$dict_expected"; then
+                info "$(log 95 "$domain")Updating $key.$dict_key from '$dict_current' to '$dict_expected'"
+                defaults write "$domain" "$key.$dict_key" "$dict_expected"
+                CHANGED=true
+            fi
+        done
+    else
+        # Handle non-array types
+        type=$(value_type "$expected")
+        
+        local current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n' | sed 's/[[:space:]]*$//')
+        if ! values_match "$type" "$current" "$expected"; then
+            info "$(log 95 "$domain")Updating $key from $current to $expected..."
+            defaults write "$domain" "$key" "-$type" "$expected"
+            CHANGED=true
+        fi
     fi
-    
+
     ok "$(log 95 "$domain")$description"
 }
 
@@ -138,8 +141,8 @@ check_plist() {
     local plist_path="$HOME/Library/Preferences/$1"
     
     local current=$(/usr/libexec/PlistBuddy -c "Print $key" "$plist_path" 2>/dev/null)
-
-    if ! values_match "$current" "$expected"; then
+    local type=$(value_type "$expected")
+    if ! values_match "$type" "$current" "$expected"; then
         info "$(log 95 "$domain")Updating $key from $current to $expected..."
         /usr/libexec/PlistBuddy -c "Add $key string $expected" "$plist_path" 2>/dev/null || \
         /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist_path"
