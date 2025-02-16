@@ -129,6 +129,7 @@ check_plist() {
 
     if ! values_match "$current" "$expected"; then
         info "$(log 95 "$domain")Updating $key from $current to $expected..."
+        /usr/libexec/PlistBuddy -c "Add $key string $expected" "$plist_path" 2>/dev/null || \
         /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist_path"
         CHANGED=true
     fi
