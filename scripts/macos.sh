@@ -284,9 +284,9 @@ finder "FK_StandardViewSettings:IconViewSettings" "Configure standard icon view"
     "showItemInfo" false \
     "arrangeBy" "name"
 finder "FXDefaultSearchScope" "Search current folder by default in Finder" "SCcf"
+finder "FXEnableExtensionChangeWarning" "Disable warning when changing a file extension" false
 finder "FXInfoPanesExpanded" \
-    "Expand the following File Info panes: General, Open with, Sharing & Permissions" \
-    "-dict" \
+    "Expand the following File Info panes: General, Open with, Sharing & Permissions" "-dict" \
     "General" true \
     "OpenWith" true \
     "Privileges" true
@@ -349,14 +349,16 @@ default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog 
 # Symbolic Hotkeys                                                            #
 ###############################################################################
 
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
-default "com.apple.symbolichotkeys" "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
+hotkey() { default "com.apple.symbolichotkeys" $@; }
+
+hotkey "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
 
 ###############################################################################
 # WindowManager                                                               #
