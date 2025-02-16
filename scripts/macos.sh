@@ -10,12 +10,12 @@ check_default() {
     
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [[ "$current" != "$expected" ]]; then
-        info "Updating $key from $current to $expected..."
+        info "$(log 95 "$domain")Updating $key from $current to $expected..."
         defaults write "$domain" "$key" "$expected"
         CHANGED=true
     fi
 
-    ok "$description"
+    ok "$(log 95 "$domain")$description"
 }
 
 check_default_dict() {
@@ -25,10 +25,10 @@ check_default_dict() {
     shift 3
     
     if ! defaults read "$domain" "$key" >/dev/null 2>&1; then
-        info "Creating $key dictionary..."
+        info "$(log 95 "$domain")Creating $key dictionary..."
         defaults write "$domain" "$key" -dict "$@"
         CHANGED=true
-        ok "$description"
+        ok "$(log 95 "$domain")$description"
         return
     fi
     
@@ -50,15 +50,16 @@ check_default_dict() {
     done
     
     if [[ "$changed" = true ]]; then
-        info "Updating $key dictionary values..."
+        info "$(log 95 "$domain")Updating $key dictionary values..."
         defaults write "$domain" "$key" -dict "${all_args[@]}"
         CHANGED=true
     fi
     
-    ok "$description"
+    ok "$(log 95 "$domain")$description"
 }
 
 check_plist() {
+    local domain="$1"
     local plist="$HOME/Library/Preferences/$1"
     local key="$2"
     local expected="$3"
@@ -68,18 +69,18 @@ check_plist() {
 
     if [[ "$current" =~ ^[0-9.]+$ ]] && [[ "$expected" =~ ^[0-9.]+$ ]]; then
         if (( $(echo "$current == $expected" | bc -l) )); then
-            ok "$description"
+            ok "$(log 95 "$domain")$description"
             return
         fi
     elif [[ "$current" == "$expected" ]]; then
-        ok "$description"
+        ok "$(log 95 "$domain")$description"
         return
     fi
 
-    info "Updating $key from $current to $expected..."
+    info "$(log 95 "$domain")Updating $key from $current to $expected..."
     /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist"
     CHANGED=true
-    ok "$description"
+    ok "$(log 95 "$domain")$description"
 }
 
 check_flag() {
