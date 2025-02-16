@@ -217,6 +217,13 @@ check_default "com.apple.finder" "ShowHardDrivesOnDesktop" "0" "Hide hard drives
 check_default "com.apple.finder" "ShowMountedServersOnDesktop" "0" "Hide mounted servers on desktop"
 check_default "com.apple.finder" "ShowRemovableMediaOnDesktop" "0" "Hide removable media on desktop"
 check_default "com.apple.finder" "FXPreferredViewStyle" "Nlsv" "Use list view in all Finder windows by default"
+check_default_dict \
+    "com.apple.finder" \
+    "FXInfoPanesExpanded" \
+    "Expand the following File Info panes: General, Open with, Sharing & Permissions" \
+    "General" true \
+    "OpenWith" true \
+    "Privileges" true
 check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on desktop"
 check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view"
 check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:iconSize" "64" "Icon size is 64px on standard view (legacy)"
@@ -230,15 +237,22 @@ check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:label
 check_plist "com.apple.finder.plist" "DesktopViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on desktop"
 check_plist "com.apple.finder.plist" "FK_StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view"
 check_plist "com.apple.finder.plist" "StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view (legacy)"
-check_flag "$HOME/Library" "nohidden" "true" "~/Library folder is visible"
-check_flag "/Volumes" "nohidden" "true" "/Volumes folder is visible"
-check_default_dict \
-    "com.apple.finder" \
-    "FXInfoPanesExpanded" \
-    "Expand the following File Info panes: General, Open with, Sharing & Permissions" \
-    "General" true \
-    "OpenWith" true \
-    "Privileges" true
+
+###############################################################################
+# Clock                                                                       #
+###############################################################################
+
+check_default "com.apple.menuextra.clock" "FlashDateSeparators" "1" "Enable flash date separators"
+check_default "com.apple.menuextra.clock" "ShowDate" "1" "Show date in clock"
+check_default "com.apple.menuextra.clock" "ShowDayOfWeek" "1" "Show day of week in clock"
+
+###############################################################################
+# Spotlight                                                                   #
+###############################################################################
+
+###############################################################################
+# Control Center                                                              #
+###############################################################################
 
 ###############################################################################
 # Kill all                                                                    #
