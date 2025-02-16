@@ -121,23 +121,6 @@ default() {
     ok "$(log 95 "$domain")$description"
 }
 
-check_plist() {
-    local domain=$1 key=$2 expected=$3 description=$4
-    local plist="$domain.plist"
-    local plist_path="$HOME/Library/Preferences/$1"
-    
-    local current=$(/usr/libexec/PlistBuddy -c "Print $key" "$plist_path" 2>/dev/null)
-    local type=$(value_type "$expected")
-    if ! values_match "$type" "$current" "$expected"; then
-        info "$(log 95 "$domain")Updating $key from $current to $expected..."
-        /usr/libexec/PlistBuddy -c "Add $key string $expected" "$plist_path" 2>/dev/null || \
-        /usr/libexec/PlistBuddy -c "Set $key $expected" "$plist_path"
-        CHANGED=true
-    fi
-
-    ok "$(log 95 "$domain")$description"
-}
-
 check_flag() {
     local path=$1 flag=$2 remove=$3 description=$4
     
@@ -306,7 +289,18 @@ default "com.apple.dock" "wvous-tr-modifier" "Remove top-right hot corner modifi
 finder() { default "com.apple.finder" $@; }
 
 finder "AppleShowAllFiles" "Show hidden files in Finder" 1
+finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
+    "iconSize" 64 \
+    "gridSpacing" 54 \
+    "showItemInfo" false \
+    "labelOnBottom" true \
+    "arrangeBy" "name"
 finder "DisableAllAnimations" "Disable Finder animations" 1
+finder "FK_StandardViewSettings:IconViewSettings" "Configure standard icon view" -dict \
+    "iconSize" 64 \
+    "gridSpacing" 54 \
+    "showItemInfo" false \
+    "arrangeBy" "name"
 finder "FXDefaultSearchScope" "Search current folder by default in Finder" "SCcf"
 finder "FXInfoPanesExpanded" \
     "Expand the following File Info panes: General, Open with, Sharing & Permissions" \
@@ -322,24 +316,13 @@ finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" 0
 finder "ShowPathbar" "Show path bar in Finder" 1
 finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" 0
 finder "ShowStatusBar" "Show status bar in Finder" 1
+finder "StandardViewSettings:IconViewSettings" "Configure standard icon view (legacy)" -dict \
+    "iconSize" 64 \
+    "gridSpacing" 54 \
+    "showItemInfo" false \
+    "arrangeBy" "name"
 finder "_FXShowPosixPathInTitle" "Hide POSIX path in Finder title" 0
 finder "_FXSortFoldersFirst" "Show folders on top when sorting by name in Finder" 1
-
-# Unfinalized finder settings
-check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:iconSize" 64 "Icon size is 64px on desktop"
-check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:iconSize" 64 "Icon size is 64px on standard view"
-check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:iconSize" 64 "Icon size is 64px on standard view (legacy)"
-check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:gridSpacing" 54 "Grid spacing is 54px on desktop"
-check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:gridSpacing" 54 "Grid spacing is 54px on standard view"
-check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:gridSpacing" 54 "Grid spacing is 54px on standard view (legacy)"
-check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:showItemInfo" false "Hide item info on desktop"
-check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:showItemInfo" false "Hide item info on standard view"
-check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:showItemInfo" false "Hide item info on standard view (legacy)"
-check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:labelOnBottom" true "Show label on bottom of desktop icons"
-check_plist "com.apple.finder" "DesktopViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on desktop"
-check_plist "com.apple.finder" "FK_StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view"
-check_plist "com.apple.finder" "StandardViewSettings:IconViewSettings:arrangeBy" "name" "Icons snap to grid by name on standard view (legacy)"
-
 
 ###############################################################################
 # DiskImages                                                                  #
