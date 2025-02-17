@@ -32,41 +32,6 @@ values_match() {
     esac
 }
 
-# Helper function to compare dictionary values
-compare_dict_values() {
-    local domain=$1 key=$2
-    shift 2
-    
-    local changed=false
-    while (( $# >= 2 )); do
-        local dict_key=$1
-        local dict_expected=$2
-        shift 2
-        
-        # Handle nested dictionary reads
-        local dict_current
-        if [[ "$key" == *":"* ]]; then
-            # For nested keys, read the parent and extract the child value
-            local parent_key=${key%%:*}    # Get everything before first colon
-            local child_key=${key#*:}      # Get everything after first colon
-            dict_current=$(defaults read "$domain" "$parent_key" 2>/dev/null | grep -A1 "\"$dict_key\" =" | tail -1 | awk '{print $1}' | tr -d '";,')
-        else
-            # For non-nested keys, read directly
-            dict_current=$(defaults read "$domain" "$key" 2>/dev/null | grep "$dict_key" | awk -F" = " '{print $2}' | tr -d ';')
-        fi
-        
-        local dict_type=$(value_type "$dict_expected")
-        
-        if [[ -z "$dict_current" ]] || ! values_match "$dict_type" "$dict_current" "$dict_expected"; then
-            changed=true
-            break
-        fi
-    done
-    
-    echo "$changed"
-}
-
-
 # Helper function to reset defaults, used for development
 reset_defaults() {
     local domain=$1
@@ -90,20 +55,37 @@ default() {
     local type=$(value_type "$value")
     local current
     
-    # Handle different value types
     case "$value" in
         -array)
             shift 4
-            current=$(defaults read "$domain" "$key" 2>/dev/null)
-            [[ "$current" != "($*)" ]] && {
+            current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n\t",' | sed 's/[[:space:]]*([[:space:]]*/(/g; s/[[:space:]]*)[[:space:]]*/)/g' | tr -s ' ')
+            local expected="($*)"
+
+            warn "Array comparison is currently considered experimental, please review the debug output below"
+            debug "Evaluating '$domain' '$key':"
+            debug "Current (${#current} chars): '$current'"
+            debug "Expected (${#expected} chars): '$expected'"
+            debug "Hex dump current: $(echo -n "$current" | xxd)"
+            debug "Hex dump expected: $(echo -n "$expected" | xxd)"
+            
+            if [[ "$current" != "$expected" ]]; then
+                info "$(log 95 "$domain")Updating $key from '$current' to '$expected'"
                 defaults write "$domain" "$key" -array "$@"
                 CHANGED=true
-            }
+            fi
             ;;
         -dict)
             shift 4
+
+            info "$(log 95 "$domain")Updating $key dictionary..."
             if [[ "$key" == *":"* ]]; then
-                defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "{ $1 = $2; }"
+                str="{ "
+                while (( $# >= 2 )); do
+                    str+="$1 = $2; "
+                    shift 2
+                done
+                str+="}"
+                defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "$str"
             else
                 defaults write "$domain" "$key" -dict "$@"
             fi
@@ -112,6 +94,7 @@ default() {
         *)
             current=$(defaults read "$domain" "$key" 2>/dev/null)
             if ! values_match "$type" "$current" "$value"; then
+                info "$(log 95 "$domain")Updating $key from '$current' to '$value'"
                 defaults write "$domain" "$key" "-$type" "$value"
                 CHANGED=true
             fi
