@@ -107,15 +107,16 @@ brewi ableton-live-suite@11 --cask;
 brewi appcleaner --cask;
 brewi bambu-studio --cask;
 brewi cursor --cask;
-brewi ghostty --cask;
+brewi ghostty --cask; # TODO: Give full disk access.  Is this possible?
 brewi gitkraken --cask;
 brewi godot --cask;
 brewi google-chrome --cask;
 brewi handbrake --cask;
+brewi imazing --cask;
 brewi izotope-product-portal --cask;
 brewi linear-linear --cask;
 brewi native-access --cask;
-# brewi parallels --cask; // TODO: add this back in
+brewi parallels --cask;
 brewi raycast --cask;
 brewi slack --cask;
 brewi superhuman --cask;
@@ -123,7 +124,7 @@ brewi utm --cask;
 brewi vlc --cask;
 brewi waves-central --cask;
 brewi xnapper --cask;
-# brewi wifi-explorer-pro --cask; // TODO: add this back in
+brewi wifi-explorer-pro --cask;
 brewi zoom --cask;
 
 # check remaining apps vs casks

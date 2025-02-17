@@ -13,7 +13,7 @@ check_casks() {
         ["BambuStudio"]="bambu-studio"
         ["Linear"]="linear-linear"
         ["Parallels Desktop"]="parallels"
-        ["Wifi Explorer Pro 3"]="wifi-explorer-pro"
+        ["WiFi Explorer Pro 3"]="wifi-explorer-pro"
         ["zoom.us"]="zoom"
         # Add more overrides as needed
     )
