@@ -32,6 +32,70 @@ values_match() {
     esac
 }
 
+# Compare two dictionaries (handles both nested and root)
+compare_dict() {
+    local domain=$1 key=$2
+    shift 2
+
+    warn "Dictionary comparison is currently considered experimental, please review the debug output below"
+    debug "Evaluating '$domain' '$key':"
+
+    # convert args to zsh associative array
+    typeset -A expected=( $@ )
+    typeset -A current
+    if [[ "$key" == *":"* ]]; then
+        debug "Comparing nested dict: $key"
+        local raw_current=$(defaults read "$domain" "${key%%:*}" 2>/dev/null | awk -v key="${key#*:}" '
+            $0 ~ "^[[:space:]]*" key " = *{" { 
+                in_section = 1
+                next
+            }
+            in_section && /^[[:space:]]*[^}]/ {
+                gsub(/^[[:space:]]*/, "")
+                gsub(/;$/, "")
+                gsub(/ = /, " ")
+                if ($0 !~ /^[{}]/) printf "%s ", $0
+            }
+            in_section && /^[[:space:]]*}/ { exit }
+        ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        current=( ${=raw_current} )
+    else
+        debug "Comparing root dict: $key"
+        local raw_current=$(defaults read "$domain" "$key" 2>/dev/null | awk '
+            /^[[:space:]]*[^}]/ {
+                gsub(/^[[:space:]]*/, "")
+                gsub(/;$/, "")
+                gsub(/ = /, " ")
+                if ($0 !~ /^[{}]/) printf "%s ", $0
+            }
+        ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        current=( ${=raw_current} )
+    fi
+
+    current_string="Current dict: { "
+    for key in ${(ok)current}; do
+        current_string+="$key = ${current[$key]}; "
+    done
+    current_string+="}"
+    debug "$current_string"
+
+    expected_string="Expected dict: { "
+    for key in ${(ok)expected}; do
+        expected_string+="$key = ${expected[$key]}; "
+    done
+    expected_string+="}"
+    debug "$expected_string"
+
+    # Compare values for each key
+    for key in ${(k)current}; do
+        if [[ "${current[$key]}" != "${expected[$key]}" ]]; then
+            debug "Key $key: ${current[$key]} != ${expected[$key]}"
+            return 1
+        fi
+    done
+    return 0
+}
+
 # Helper function to reset defaults, used for development
 reset_defaults() {
     local domain=$1
@@ -76,20 +140,21 @@ default() {
             ;;
         -dict)
             shift 4
-
-            info "$(log 95 "$domain")Updating $key dictionary..."
-            if [[ "$key" == *":"* ]]; then
-                str="{ "
-                while (( $# >= 2 )); do
-                    str+="$1 = $2; "
-                    shift 2
-                done
-                str+="}"
-                defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "$str"
-            else
-                defaults write "$domain" "$key" -dict "$@"
+            if ! compare_dict "$domain" "$key" "$@"; then
+                info "$(log 95 "$domain")Updating $key dictionary..."
+                if [[ "$key" == *":"* ]]; then
+                    str="{ "
+                    while (( $# >= 2 )); do
+                        str+="$1 = $2; "
+                        shift 2
+                    done
+                    str+="}"
+                    defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "$str"
+                else
+                    defaults write "$domain" "$key" -dict "$@"
+                fi
+                CHANGED=true
             fi
-            CHANGED=true
             ;;
         *)
             current=$(defaults read "$domain" "$key" 2>/dev/null)
