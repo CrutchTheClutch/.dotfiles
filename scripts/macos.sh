@@ -37,14 +37,14 @@ compare_dict() {
     local domain=$1 key=$2
     shift 2
 
-    warn "Dictionary comparison is currently considered experimental, please review the debug output below"
-    debug "Evaluating '$domain' '$key':"
+    warn "$(log 95 "$domain")Dictionary comparison is currently considered experimental, $key may be updated unexpectedly"
+    debug "$(log 95 "$domain")Evaluating '$domain' '$key':"
 
     # convert args to zsh associative array
     typeset -A expected=( $@ )
     typeset -A current
     if [[ "$key" == *":"* ]]; then
-        debug "Comparing nested dict: $key"
+        debug "$(log 95 "$domain")Comparing nested dictionary..."
         local raw_current=$(defaults read "$domain" "${key%%:*}" 2>/dev/null | awk -v key="${key#*:}" '
             $0 ~ "^[[:space:]]*" key " = *{" { 
                 in_section = 1
@@ -60,7 +60,7 @@ compare_dict() {
         ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         current=( ${=raw_current} )
     else
-        debug "Comparing root dict: $key"
+        debug "$(log 95 "$domain")Comparing root dictionary..."
         local raw_current=$(defaults read "$domain" "$key" 2>/dev/null | awk '
             /^[[:space:]]*[^}]/ {
                 gsub(/^[[:space:]]*/, "")
@@ -77,19 +77,19 @@ compare_dict() {
         current_string+="$key = ${current[$key]}; "
     done
     current_string+="}"
-    debug "$current_string"
+    debug "$(log 95 "$domain")$current_string"
 
     expected_string="Expected dict: { "
     for key in ${(ok)expected}; do
         expected_string+="$key = ${expected[$key]}; "
     done
     expected_string+="}"
-    debug "$expected_string"
+    debug "$(log 95 "$domain")$expected_string"
 
     # Compare values for each key
     for key in ${(k)current}; do
         if [[ "${current[$key]}" != "${expected[$key]}" ]]; then
-            debug "Key $key: ${current[$key]} != ${expected[$key]}"
+            debug "$(log 95 "$domain")Key $key: ${current[$key]} != ${expected[$key]}"
             return 1
         fi
     done
@@ -125,12 +125,12 @@ default() {
             current=$(defaults read "$domain" "$key" 2>/dev/null | tr -d '\n\t",' | sed 's/[[:space:]]*([[:space:]]*/(/g; s/[[:space:]]*)[[:space:]]*/)/g' | tr -s ' ')
             local expected="($*)"
 
-            warn "Array comparison is currently considered experimental, please review the debug output below"
-            debug "Evaluating '$domain' '$key':"
-            debug "Current (${#current} chars): '$current'"
-            debug "Expected (${#expected} chars): '$expected'"
-            debug "Hex dump current: $(echo -n "$current" | xxd)"
-            debug "Hex dump expected: $(echo -n "$expected" | xxd)"
+            warn "$(log 95 "$domain")Array comparison is currently considered experimental, $key may be updated unexpectedly"
+            debug "$(log 95 "$domain")Evaluating '$domain' '$key':"
+            debug "$(log 95 "$domain")Current (${#current} chars): '$current'"
+            debug "$(log 95 "$domain")Expected (${#expected} chars): '$expected'"
+            debug "$(log 95 "$domain")Hex dump current: $(echo -n "$current" | xxd)"
+            debug "$(log 95 "$domain")Hex dump expected: $(echo -n "$expected" | xxd)"
             
             if [[ "$current" != "$expected" ]]; then
                 info "$(log 95 "$domain")Updating $key from '$current' to '$expected'"
