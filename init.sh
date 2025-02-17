@@ -53,17 +53,17 @@ brewi() {
         is_cask="--cask"
     fi
 
-    if brew list $is_cask $package &>/dev/null; then
-        if brew outdated $is_cask | grep -q "^$package\$"; then
+    if brew list $is_cask $package 2>&1; then
+        if brew outdated $is_cask 2>&1 | grep -q "^$package\$"; then
             info "Updating $package..."
-            brew upgrade $is_cask $package
+            brew upgrade $is_cask $package 2>&1
             ok "$package updated successfully"
         else
             ok "$package is installed and up to date"
         fi
     else
         info "Installing $package..."
-        brew install $is_cask $package --force
+        brew install $is_cask $package --force 2>&1
         ok "$package installed successfully"
     fi
 }
