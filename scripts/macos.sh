@@ -261,6 +261,21 @@ global "com.apple.springing.enabled" "Enable spring loading for directories" 1
 global "com.apple.trackpad.forceClick" "Enable force click on trackpad" 1
 
 ###############################################################################
+# Apple Symbolic Hotkeys                                                      #
+###############################################################################
+
+hotkey() { default "com.apple.symbolichotkeys" $@; }
+
+hotkey "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
+hotkey "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
+
+###############################################################################
 # BezelServices                                                               #
 ###############################################################################
 
@@ -394,19 +409,11 @@ default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "Enable AirDrop over al
 default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog when finished" true
 
 ###############################################################################
-# Symbolic Hotkeys                                                            #
+# Security                                                                  #
 ###############################################################################
 
-hotkey() { default "com.apple.symbolichotkeys" $@; }
-
-hotkey "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
-hotkey "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
+default "com.apple.security" "GKAutoRearm" "Disable Gatekeeper auto-rearm" false
+default "com.apple.security" "assessment" "Disable Gatekeeper assessment" false
 
 ###############################################################################
 # WindowManager                                                               #

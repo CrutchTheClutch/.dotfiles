@@ -106,3 +106,5 @@ brewi ghostty --cask;
 brewi gitkraken --cask;
 brewi raycast --cask;
 brewi superhuman --cask;
+brewi google-chrome --cask;
+brewi slack --cask;
