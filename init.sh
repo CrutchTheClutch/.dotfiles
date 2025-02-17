@@ -93,7 +93,7 @@ install_homebrew;
 brewi git;
 clone_repo;
 
-# run setup scripts
+# source remaining scripts (order is important)
 source $HOME/.dotfiles/scripts/rosetta2.sh;
 source $HOME/.dotfiles/scripts/macos.sh;
 source $HOME/.dotfiles/scripts/homebrew.sh;
@@ -108,3 +108,6 @@ brewi raycast --cask;
 brewi superhuman --cask;
 brewi google-chrome --cask;
 brewi slack --cask;
+
+# check remaining apps vs casks
+check_casks;
