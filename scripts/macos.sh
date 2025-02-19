@@ -21,6 +21,13 @@ value_type() {
 values_match() {
     local type=$1 current=$2 expected=$3
     
+    #debug "$(log 95 "$domain")values_match: type=$type, current='$current', expected='$expected'"
+    
+    # Handle empty current value
+    if [[ -z "$current" ]]; then
+        return 1
+    fi
+    
     case "$type" in
         int|float)
             [[ $(echo "$current == $expected" | bc -l) -eq 1 ]]
