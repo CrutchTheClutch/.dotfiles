@@ -54,7 +54,26 @@ compare_dict() {
     debug "$(log 95 "$domain")Evaluating '$domain' '$key':"
 
     # convert args to zsh associative array
-    typeset -A expected=( $@ )
+    typeset -A expected
+    local is_nested=false
+    local nested_dict=""
+    
+    # Parse expected values, handling nested dicts
+    while (( $# >= 1 )); do
+        if [[ "$2" == "-dict" ]]; then
+            is_nested=true
+            nested_key="$1"
+            shift 2
+            while (( $# >= 2 )) && [[ "$2" != "-dict" ]]; do
+                expected[$1]="$2"
+                shift 2
+            done
+        else
+            expected[$1]="$2"
+            shift 2
+        fi
+    done
+
     typeset -A current
     if [[ "$key" == *":"* ]]; then
         debug "$(log 95 "$domain")Comparing nested dictionary..."
@@ -70,11 +89,11 @@ compare_dict() {
                 in_section = 1
                 next
             }
-            in_section && /^[[:space:]]*[^{}]/ {
+            in_section && /^[[:space:]]*[^}]/ {
                 gsub(/^[[:space:]]*/, "")
                 gsub(/;$/, "")
-                gsub(/ = /, "=")  # Remove spaces around equals
-                if ($0 ~ /^[^{}=]+=[^{}=]+$/) print
+                gsub(/ = /, "=")
+                if ($0 ~ /^[^=]+=.*$/) print
             }
             in_section && /^[[:space:]]*}/ { exit }
         ')
@@ -90,49 +109,51 @@ compare_dict() {
         ')
     fi
 
-    # Convert the raw output into key-value pairs for the associative array
-    local pairs=()
-    while IFS='=' read -r key value; do
-        [[ -n "$key" ]] || continue
-        key=${key## }    # Remove leading spaces
-        key=${key%% }    # Remove trailing spaces
-        value=${value## } # Remove leading spaces
-        value=${value%% } # Remove trailing spaces
-        pairs+=("$key" "$value")
+    # Convert the raw output into key-value pairs
+    local current_pairs=""
+    while IFS='=' read -r k v; do
+        [[ -n "$k" ]] || continue
+        k=${k## }    # Remove leading spaces
+        k=${k%% }    # Remove trailing spaces
+        v=${v## }    # Remove leading spaces
+        v=${v%% }    # Remove trailing spaces
+        v=${v#\"}    # Remove leading quote
+        v=${v%\"}    # Remove trailing quote
+        current_pairs+="$k=$v;"
+        debug "$(log 95 "$domain")Raw value before storage: '$v' (${#v} chars)"
+        debug "$(log 95 "$domain")Stored key-value pair: '$k=$v'"
     done < <(echo "$raw_current")
 
-    # Create the associative array from the pairs
-    current=("${pairs[@]}")
-
-    current_string="Current dict: { "
-    for key in ${(ok)current}; do
-        current_string+="$key = ${current[$key]}; "
-    done
-    current_string+="}"
+    current_string="Current dict: { ${current_pairs} }"
     debug "$(log 95 "$domain")$current_string"
 
     expected_string="Expected dict: { "
-    for key in ${(ok)expected}; do
-        expected_string+="$key = ${expected[$key]}; "
+    for k in ${(ok)expected}; do
+        expected_string+="$k = ${expected[$k]}; "
     done
     expected_string+="}"
     debug "$(log 95 "$domain")$expected_string"
 
+    # If this is a nested dict, we only care about the nested values
+    if $is_nested && [[ -n "$nested_key" ]]; then
+        for k in ${(k)current}; do
+            if [[ "$k" != "$nested_key" ]]; then
+                unset "current[$k]"
+            fi
+        done
+    fi
+
     # Compare values for each key
-    for key in ${(k)expected}; do
-        if [[ "${current[$key]}" != "${expected[$key]}" ]]; then
-            debug "$(log 95 "$domain")Key $key: ${current[$key]} != ${expected[$key]}"
+    for k in ${(k)expected}; do
+        local curr_val=$(echo "$current_pairs" | grep -o "${k}=[^;]*" | cut -d= -f2)
+        local exp_val="${expected[$k]}"
+        debug "$(log 95 "$domain")Comparing key '$k': '$curr_val' (${#curr_val} chars) vs '$exp_val' (${#exp_val} chars)"
+        if [[ "$curr_val" != "$exp_val" ]]; then
+            debug "$(log 95 "$domain")$key: $k: '$curr_val' != '$exp_val'"
             return 1
         fi
     done
-    
-    # Also check if there are any extra keys in current that aren't in expected
-    for key in ${(k)current}; do
-        if [[ -z "${expected[$key]}" ]]; then
-            debug "$(log 95 "$domain")Extra key found in current: $key"
-            return 1
-        fi
-    done
+
     return 0
 }
 
@@ -183,15 +204,42 @@ default() {
             if ! compare_dict "$domain" "$key" "$@"; then
                 info "$(log 95 "$domain")Updating $key dictionary..."
                 if [[ "$key" == *":"* ]]; then
-                    str="{ "
+                    # For nested dictionaries with colon notation
+                    local dict_str=""
                     while (( $# >= 2 )); do
-                        str+="$1 = $2; "
+                        if [[ "$2" =~ ^[0-9]+$ ]]; then
+                            dict_str+="\"$1\" = $2; "
+                        else
+                            dict_str+="\"$1\" = \"$2\"; "
+                        fi
                         shift 2
                     done
-                    str+="}"
-                    defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "$str"
+                    defaults write "$domain" "${key%%:*}" -dict-add "${key#*:}" "{ $dict_str}"
                 else
-                    defaults write "$domain" "$key" -dict "$@"
+                    # For root dictionaries with nested structures
+                    local args=()
+                    while (( $# >= 1 )); do
+                        if [[ "$2" == "-dict" ]]; then
+                            # Start of nested dict
+                            args+=("$1")
+                            shift 2
+                            local nested_dict="{ "
+                            while (( $# >= 2 )) && [[ "$2" != "-dict" ]]; do
+                                if [[ "$2" =~ ^[0-9]+$ ]]; then
+                                    nested_dict+="\"$1\" = $2; "
+                                else
+                                    nested_dict+="\"$1\" = \"$2\"; "
+                                fi
+                                shift 2
+                            done
+                            nested_dict+="}"
+                            args+=("$nested_dict")
+                        else
+                            args+=("$1" "$2")
+                            shift 2
+                        fi
+                    done
+                    defaults write "$domain" "$key" -dict "${args[@]}"
                 fi
                 is_changed
             fi
