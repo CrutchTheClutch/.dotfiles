@@ -116,6 +116,7 @@ brewi imazing --cask;
 brewi izotope-product-portal --cask;
 brewi linear-linear --cask;
 brewi native-access --cask;
+brewi osquery --cask;
 brewi parallels --cask;
 brewi raycast --cask;
 brewi slack --cask;
