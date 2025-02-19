@@ -46,32 +46,51 @@ compare_dict() {
     typeset -A current
     if [[ "$key" == *":"* ]]; then
         debug "$(log 95 "$domain")Comparing nested dictionary..."
-        local raw_current=$(defaults read "$domain" "${key%%:*}" 2>/dev/null | awk -v key="${key#*:}" '
+        # Get the full dictionary first
+        local full_dict=$(defaults read "$domain" "${key%%:*}" 2>/dev/null)
+        if [[ -z "$full_dict" ]]; then
+            debug "$(log 95 "$domain")No existing dictionary found"
+            return 1
+        fi
+        # Extract just the nested part we care about
+        local raw_current=$(echo "$full_dict" | awk -v key="${key#*:}" '
             $0 ~ "^[[:space:]]*" key " = *{" { 
                 in_section = 1
                 next
             }
-            in_section && /^[[:space:]]*[^}]/ {
+            in_section && /^[[:space:]]*[^{}]/ {
                 gsub(/^[[:space:]]*/, "")
                 gsub(/;$/, "")
-                gsub(/ = /, " ")
-                if ($0 !~ /^[{}]/) printf "%s ", $0
+                gsub(/ = /, "=")  # Remove spaces around equals
+                if ($0 ~ /^[^{}=]+=[^{}=]+$/) print
             }
             in_section && /^[[:space:]]*}/ { exit }
-        ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        current=( ${=raw_current} )
+        ')
     else
         debug "$(log 95 "$domain")Comparing root dictionary..."
         local raw_current=$(defaults read "$domain" "$key" 2>/dev/null | awk '
-            /^[[:space:]]*[^}]/ {
+            /^[[:space:]]*[^{}]/ {
                 gsub(/^[[:space:]]*/, "")
                 gsub(/;$/, "")
-                gsub(/ = /, " ")
-                if ($0 !~ /^[{}]/) printf "%s ", $0
+                gsub(/ = /, "=")  # Remove spaces around equals
+                if ($0 ~ /^[^{}=]+=[^{}=]+$/) print
             }
-        ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        current=( ${=raw_current} )
+        ')
     fi
+
+    # Convert the raw output into key-value pairs for the associative array
+    local pairs=()
+    while IFS='=' read -r key value; do
+        [[ -n "$key" ]] || continue
+        key=${key## }    # Remove leading spaces
+        key=${key%% }    # Remove trailing spaces
+        value=${value## } # Remove leading spaces
+        value=${value%% } # Remove trailing spaces
+        pairs+=("$key" "$value")
+    done < <(echo "$raw_current")
+
+    # Create the associative array from the pairs
+    current=("${pairs[@]}")
 
     current_string="Current dict: { "
     for key in ${(ok)current}; do
@@ -88,9 +107,17 @@ compare_dict() {
     debug "$(log 95 "$domain")$expected_string"
 
     # Compare values for each key
-    for key in ${(k)current}; do
+    for key in ${(k)expected}; do
         if [[ "${current[$key]}" != "${expected[$key]}" ]]; then
             debug "$(log 95 "$domain")Key $key: ${current[$key]} != ${expected[$key]}"
+            return 1
+        fi
+    done
+    
+    # Also check if there are any extra keys in current that aren't in expected
+    for key in ${(k)current}; do
+        if [[ -z "${expected[$key]}" ]]; then
+            debug "$(log 95 "$domain")Extra key found in current: $key"
             return 1
         fi
     done
