@@ -429,6 +429,7 @@ finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dic
     "labelOnBottom" true \
     "arrangeBy" "name"
 finder "DisableAllAnimations" "Disable Finder animations" 1
+finder "FK_StandardViewSettings" "Configure standard view settings (new)" -dict "ViewStyle" "Nlsv"
 finder "FK_StandardViewSettings:IconViewSettings" "Configure standard icon view" -dict \
     "iconSize" 64 \
     "gridSpacing" 54 \
@@ -442,18 +443,22 @@ finder "FXInfoPanesExpanded" \
     "OpenWith" true \
     "Privileges" true
 finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" "Nlsv"
+finder "FXSearchViewSettings" "Set list view as default for search results (legacy)" -dict "ViewStyle" "Nlsv"
 finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1
+finder "SearchViewSettings" "Set list view as default for search results" -dict "ViewStyle" "Nlsv"
 finder "ShowExternalHardDrivesOnDesktop" "Hide external hard drives on desktop" 0
 finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" 0
 finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" 0
 finder "ShowPathbar" "Show path bar in Finder" 1
 finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" 0
 finder "ShowStatusBar" "Show status bar in Finder" 1
-finder "StandardViewSettings:IconViewSettings" "Configure standard icon view (legacy)" -dict \
-    "iconSize" 64 \
-    "gridSpacing" 54 \
-    "showItemInfo" false \
-    "arrangeBy" "name"
+finder "StandardViewSettings" "Configure standard view settings (legacy)" -dict \
+    "ViewStyle" "Nlsv" \
+    "IconViewSettings" -dict \
+        "iconSize" 64 \
+        "gridSpacing" 54 \
+        "showItemInfo" false \
+        "arrangeBy" "name"
 finder "_FXShowPosixPathInTitle" "Hide POSIX path in Finder title" 0
 finder "_FXSortFoldersFirst" "Show folders on top when sorting by name in Finder" 1
 
