@@ -334,12 +334,12 @@ global "AppleShowAllExtensions" "Show filename extensions" 1
 global "NSAutomaticWindowAnimationsEnabled" "Disable window animations" false
 global "NavPanelFileListModeForOpenMode" "Show column view in open mode" 2
 global "NavPanelFileListModeForSaveMode" "Show column view in save mode" 2
-global "PMPrintingExpandedStateForPrint" "Expand print panel by default (legacy)" true
-global "PMPrintingExpandedStateForPrint2" "Expand print panel by default" true
 global "NSNavPanelExpandedStateForSaveMode" "Expand save panel by default (legacy)" true
 global "NSNavPanelExpandedStateForSaveMode2" "Expand save panel by default" true
 global "NSTableViewDefaultSizeMode" "Set table view default size to medium" 2
 global "NSWindowResizeTime" "Remove window resize animation" 0.001
+global "PMPrintingExpandedStateForPrint" "Expand print panel by default (legacy)" true
+global "PMPrintingExpandedStateForPrint2" "Expand print panel by default" true
 global "ReduceMotion" "Disable motion animations" true
 global "com.apple.mouse.scaling" "Set mouse scaling to 0.875 (sensitivity)" 0.875
 global "com.apple.sound.beep.volume" "Disable system alert sound" 0
@@ -429,6 +429,7 @@ finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dic
     "labelOnBottom" true \
     "arrangeBy" "name"
 finder "DisableAllAnimations" "Disable Finder animations" 1
+finder "FK_AppCentricShowSidebar" "Show sidebar in app-centric Finder" 1
 finder "FK_StandardViewSettings" "Configure standard view settings (new)" -dict "ViewStyle" "Nlsv"
 finder "FK_StandardViewSettings:IconViewSettings" "Configure standard icon view" -dict \
     "iconSize" 64 \
@@ -543,5 +544,6 @@ if $CHANGED; then
     do
         quit_app "$app"
     done
+    open -a "Finder"
     ok "System Settings updated! Some changes may require a restart to take effect."
 fi
