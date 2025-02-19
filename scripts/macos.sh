@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 CHANGED=false
+is_changed() { CHANGED=true; debug "Changed: $CHANGED" }
 
 # Get the type of a value
 value_type() {
@@ -107,7 +108,7 @@ reset_defaults() {
         info "$(log 95 "$domain")Resetting preferences"
         defaults delete "$domain"
         ok "$(log 95 "$domain")Reset all settings to defaults"
-        CHANGED=true
+        is_changed
     else
         warn "$(log 95 "$domain")Failed to backup preferences, skipping reset"
     fi
@@ -135,7 +136,7 @@ default() {
             if [[ "$current" != "$expected" ]]; then
                 info "$(log 95 "$domain")Updating $key from '$current' to '$expected'"
                 defaults write "$domain" "$key" -array "$@"
-                CHANGED=true
+                is_changed
             fi
             ;;
         -dict)
@@ -153,7 +154,7 @@ default() {
                 else
                     defaults write "$domain" "$key" -dict "$@"
                 fi
-                CHANGED=true
+                is_changed
             fi
             ;;
         *)
@@ -161,7 +162,7 @@ default() {
             if ! values_match "$type" "$current" "$value"; then
                 info "$(log 95 "$domain")Updating $key from '$current' to '$value'"
                 defaults write "$domain" "$key" "-$type" "$value"
-                CHANGED=true
+                is_changed
             fi
             ;;
     esac
@@ -176,7 +177,7 @@ set_flag() {
     if [[ "$enable" == "true" && "$current" != *"$flag"* ]] || [[ "$enable" == "false" && "$current" == *"$flag"* ]]; then
         info "Setting $flag flag to $enable on $path..."
         /usr/bin/chflags ${enable:+""}"no"${enable:+""}$flag "$path"
-        CHANGED=true
+        is_changed
     fi
     
     ok "$description"
