@@ -1,7 +1,12 @@
 #!/bin/zsh
 
 CHANGED=false
-is_changed() { CHANGED=true; debug "Changed: $CHANGED" }
+is_changed() {
+    if [[ "$CHANGED" != "true" ]]; then
+        CHANGED=true; 
+        debug "CHANGED = $CHANGED"
+    fi
+}
 
 # Get the type of a value
 value_type() {
