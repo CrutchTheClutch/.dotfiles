@@ -442,9 +442,12 @@ finder "FXInfoPanesExpanded" \
     "General" true \
     "OpenWith" true \
     "Privileges" true
+finder "FXPreferredSearchViewStyle" "Use list view in search results by default" "Nlsv"
 finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" "Nlsv"
+finder "FXRecentFoldersViewStyle" "Use list view in Finder recents by default" "Nlsv"
 finder "FXSearchViewSettings" "Set list view as default for search results (legacy)" -dict "ViewStyle" "Nlsv"
 finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1
+finder "SearchRecentsSavedViewStyle" "Use list view in Finder recents by default" "Nlsv"
 finder "SearchViewSettings" "Set list view as default for search results" -dict "ViewStyle" "Nlsv"
 finder "ShowExternalHardDrivesOnDesktop" "Hide external hard drives on desktop" 0
 finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" 0
