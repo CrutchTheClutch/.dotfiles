@@ -104,6 +104,7 @@ brewi neovim;
 # install brew packages
 brewi 1password --cask;
 brewi ableton-live-suite@11 --cask;
+brewi adobe-creative-cloud --cask;
 brewi appcleaner --cask;
 brewi bambu-studio --cask;
 brewi cursor --cask;
