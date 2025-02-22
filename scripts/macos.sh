@@ -425,7 +425,7 @@ finder "AppleShowAllFiles" "Show hidden files in Finder" 1
 finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
     "iconSize" 64 \
     "gridSpacing" 54 \
-    "showItemInfo" false \
+    "showItemInfo" 0 \
     "labelOnBottom" true \
     "arrangeBy" "name"
 finder "DisableAllAnimations" "Disable Finder animations" 1
