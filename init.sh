@@ -99,6 +99,7 @@ source $HOME/.dotfiles/scripts/macos.sh;
 source $HOME/.dotfiles/scripts/homebrew.sh;
 
 # install brew formulae
+brewi neofetch;
 brewi neovim;
 
 # install brew packages
