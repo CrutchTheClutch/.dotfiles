@@ -422,6 +422,7 @@ default "com.apple.dock" "wvous-tr-modifier" "Remove top-right hot corner modifi
 finder() { default "com.apple.finder" $@; }
 
 finder "AppleShowAllFiles" "Show hidden files in Finder" 1
+# TODO: Bug with setting nested dicts if the root dict doesn't exist
 finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
     "iconSize" 64 \
     "gridSpacing" 54 \
