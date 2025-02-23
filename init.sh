@@ -108,6 +108,7 @@ brewi ableton-live-suite@11 --cask;
 brewi adobe-creative-cloud --cask;
 brewi appcleaner --cask;
 brewi bambu-studio --cask;
+brewi beekeeper-studio --cask;
 brewi cursor --cask;
 brewi ghostty --cask; # TODO: Give full disk access.  Is this possible?
 brewi gitkraken --cask;
