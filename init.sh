@@ -122,6 +122,7 @@ brewi linear-linear --cask;
 brewi native-access --cask;
 brewi osquery --cask;
 brewi parallels --cask;
+brewi powershell --cask;
 brewi raycast --cask;
 brewi slack --cask;
 brewi superhuman --cask;
