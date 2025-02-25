@@ -394,8 +394,8 @@ default "com.apple.dock" "minimize-to-application" "Minimize windows into applic
 default "com.apple.dock" "mouse-over-hilite-stack" "Disable drag windows to top of screen to enter Mission Control" 0
 default "com.apple.dock" "mru-spaces" "Disable automatically rearrange Spaces based on most recent use" 0
 default "com.apple.dock" "orientation" "Position dock on left side" "left"
-default "com.apple.dock" "persistent-apps" "Remove all apps from dock" "()"
-default "com.apple.dock" "persistent-others" "Remove all others from dock" "()"
+default "com.apple.dock" "persistent-apps" "Remove all apps from dock" -array
+default "com.apple.dock" "persistent-others" "Remove all others from dock" -array
 default "com.apple.dock" "show-process-indicators" "Show indicators for open applications" 1
 default "com.apple.dock" "show-recents" "Disable recent applications" 0
 default "com.apple.dock" "spans-displays" "Enable separate Spaces for each display" 1
