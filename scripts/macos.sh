@@ -1,11 +1,18 @@
 #!/bin/zsh
 
-CHANGED=false
-is_changed() {
-    if [[ "$CHANGED" != "true" ]]; then
-        CHANGED=true; 
-        debug "CHANGED = $CHANGED"
+array_add() {
+    local array=("$@")
+    local item=$1
+    if [[ ! " ${array[@]} " =~ " ${item} " ]]; then
+        array+=("$item")
     fi
+}
+
+MODIFIED_DOMAINS=()
+
+modify_domain() {
+    local domain=$1
+    array_add MODIFIED_DOMAINS "$domain"
 }
 
 # Helper function to reset defaults, used for development
@@ -19,7 +26,7 @@ reset_defaults() {
         info "$(log 95 "$domain")Resetting preferences"
         defaults delete "$domain"
         ok "$(log 95 "$domain")Reset all settings to defaults"
-        is_changed
+        modify_domain "$domain"
     else
         warn "$(log 95 "$domain")Failed to backup preferences, skipping reset"
     fi
@@ -38,7 +45,8 @@ default() {
     
     info "$(log 95 "$domain") $key invalid (current: $current -> new: $value)..."
     defaults write "$domain" "$key" "$value"
-    
+    modify_domain "$domain"
+
     # Verify the setting
     current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [[ "$current" == "$value" ]]; then
@@ -56,49 +64,47 @@ set_flag() {
     if [[ "$enable" == "true" && "$current" != *"$flag"* ]] || [[ "$enable" == "false" && "$current" == *"$flag"* ]]; then
         info "Setting $flag flag to $enable on $path..."
         /usr/bin/chflags ${enable:+""}"no"${enable:+""}$flag "$path"
-        is_changed
     fi
-    
+    # TODO: make this better
     ok "$description"
 }
 
 quit_app() {
     local app=$1
-    if osascript -e "tell application \"System Events\" to (name of processes) contains \"$1\"" 2>/dev/null | grep -q "true"; then
-        osascript -e "tell application \"$app\" to quit" 2>/dev/null || killall "$app" 2>/dev/null || true
+    if killall "$app" 2>/dev/null || true; then
         ok "$app killed to apply changes"
     fi
 }
 
-disable_system_app() {
-    local app=$1
-    local app_path="/System/Applications/${app}.app"
-    local executable_path="$app_path/Contents/MacOS/$app"
-
-    if [ ! -e "$app_path" ]; then
-        ok "$app is not installed"
-        return
-    fi
-
-    quit_app "${app}"
-}
+#disable_system_app() {
+#    local app=$1
+#    local app_path="/System/Applications/${app}.app"
+#    local executable_path="$app_path/Contents/MacOS/$app"
+#
+#    if [ ! -e "$app_path" ]; then
+#        ok "$app is not installed"
+#        return
+#    fi
+#
+#    quit_app "${app}"
+#}
 
 # Check if System Preferences is running before attempting to quit
-# Note: On newer macOS versions (Ventura+), it's called "System Settings"
-quit_app "System Preferences"
+# Note: On older macOS versions (before Ventura), it's called "System Preferences"
 quit_app "System Settings"
+
 
 ###############################################################################
 # SYSTEM                                                                      #
 ###############################################################################
 
-SYSTEM_APPS=(
-    "Tips"
-)
+#SYSTEM_APPS=(
+#    "Tips"
+#)
 
-for app in "${SYSTEM_APPS[@]}"; do
-    disable_system_app $app
-done
+#for app in "${SYSTEM_APPS[@]}"; do
+#    disable_system_app $app
+#done
 
 set_flag "$HOME/Library" "hidden" false "Show ~/Library folder by default"
 set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
@@ -109,7 +115,7 @@ set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
 
 global() { default "NSGlobalDomain" $@; }
 
-global "AppleLanguages" "Set primary language to English" -array "en-US"
+#global "AppleLanguages" "Set primary language to English" -array "en-US"
 #global "AppleLocale" "Set locale to USA" "en_US@currency=USD"
 #global "AppleMeasurementUnits" "Set measurement units to inches" "inches"
 #global "AppleMetricUnits" "Disable metric system" false
@@ -322,20 +328,50 @@ finder() { default "com.apple.finder" $@; }
 # Kill all                                                                    #
 ###############################################################################
 
-if $CHANGED; then
-    for app in "SystemUIServer" \
-            "cfprefsd" \
-            "Finder" \
-            "Dock" \
-            "ControlCenter" \
-            "NotificationCenter" \
-            "Messages" \
-            "Spotlight" \
-            "AppleSpell" \
-            "AppleLanguages"
-    do
-        quit_app "$app"
-    done
-    open -a "Finder"
-    ok "System Settings updated! Some changes may require a restart to take effect."
-fi
+
+#RESTART_REQUIRED=false
+#quit_list=()
+## Build list of services to restart
+#for domain in "${MODIFIED_DOMAINS[@]}"; do
+#    case "$domain" in
+#        "NSGlobalDomain")
+#            array_add quit_list "SystemUIServer"
+#            array_add quit_list "Finder"
+#            ;;
+#        "com.apple.dock")
+#            array_add quit_list "Dock" 
+#            ;;
+#        "com.apple.finder")
+#            array_add quit_list "Finder"
+#            ;;
+#        "com.apple.controlcenter")
+#            array_add quit_list "ControlCenter"
+#            ;;
+#        "com.apple.Spotlight")
+#            array_add quit_list "Spotlight"
+#            ;;
+#        "com.apple.menuextra.clock")
+#            array_add quit_list "SystemUIServer"
+#            ;;
+#        *)
+#            debug "Unknown domain $domain"
+#            RESTART_REQUIRED=true
+#            ;;
+#    esac
+#done
+#
+## Restart services based on modified domains
+#for app in "${quit_list[@]}"; do
+#    info "Restarting $app..."
+#    quit_app "$app"
+#
+#    # Open Finder if it was restarted
+#    if [[ "$app" == "Finder" ]]; then
+#        open -a "Finder"
+#    fi
+#done
+#
+#
+#if [[ "$RESTART_REQUIRED" == "true" ]]; then
+#    warn "Some changes require a restart to take effect"
+#fi
