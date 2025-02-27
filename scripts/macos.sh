@@ -3,10 +3,10 @@
 array_add() {
     local array_name=$1
     local item=$2
-    local array_ref="$array_name[@]"
     
-    if [[ ! " ${!array_ref} " =~ " ${item} " ]]; then
-        eval "$array_name+=(\"\$item\")"
+    # Use eval to check if item exists in array
+    if ! eval "print -l \"\${${array_name}[@]}\"" | grep -q "^${item}\$"; then
+        eval "${array_name}+=(\"\$item\")"
     fi
 }
 
@@ -142,7 +142,7 @@ restart_app() {
 
 # Check if System Preferences is running before attempting to quit
 # Note: On older macOS versions (before Ventura), it's called "System Preferences"
-#quit_app "System Settings"
+quit_app "System Settings"
 
 
 ###############################################################################
@@ -270,7 +270,7 @@ global() { default "NSGlobalDomain" $@; }
 
 finder() { default "com.apple.finder" $@; }
 
-#finder "AppleShowAllFiles" "Show hidden files in Finder" 1
+finder "AppleShowAllFiles" "Show hidden files in Finder" 1
 #finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
 #    "iconSize" 64 \
 #    "gridSpacing" 54 \
@@ -380,49 +380,42 @@ finder() { default "com.apple.finder" $@; }
 ###############################################################################
 
 
-#RESTART_REQUIRED=false
-#quit_list=()
-## Build list of services to restart
-#for domain in "${MODIFIED_DOMAINS[@]}"; do
-#    case "$domain" in
-#        "NSGlobalDomain")
-#            array_add quit_list "SystemUIServer"
-#            array_add quit_list "Finder"
-#            ;;
-#        "com.apple.dock")
-#            array_add quit_list "Dock" 
-#            ;;
-#        "com.apple.finder")
-#            array_add quit_list "Finder"
-#            ;;
-#        "com.apple.controlcenter")
-#            array_add quit_list "ControlCenter"
-#            ;;
-#        "com.apple.Spotlight")
-#            array_add quit_list "Spotlight"
-#            ;;
-#        "com.apple.menuextra.clock")
-#            array_add quit_list "SystemUIServer"
-#            ;;
-#        *)
-#            debug "Unknown domain $domain"
-#            RESTART_REQUIRED=true
-#            ;;
-#    esac
-#done
-#
-## Restart services based on modified domains
-#for app in "${quit_list[@]}"; do
-#    info "Restarting $app..."
-#    quit_app "$app"
-#
-#    # Open Finder if it was restarted
-#    if [[ "$app" == "Finder" ]]; then
-#        open -a "Finder"
-#    fi
-#done
-#
-#
-#if [[ "$RESTART_REQUIRED" == "true" ]]; then
-#    warn "Some changes require a restart to take effect"
-#fi
+RESTART_REQUIRED=false
+quit_list=()
+# Build list of services to restart
+for domain in "${MODIFIED_DOMAINS[@]}"; do
+    case "$domain" in
+        "NSGlobalDomain")
+            array_add quit_list "SystemUIServer"
+            array_add quit_list "Finder"
+            ;;
+        "com.apple.dock")
+            array_add quit_list "Dock" 
+            ;;
+        "com.apple.finder")
+            array_add quit_list "Finder"
+            ;;
+        "com.apple.controlcenter")
+            array_add quit_list "ControlCenter"
+            ;;
+        "com.apple.Spotlight")
+            array_add quit_list "Spotlight"
+            ;;
+        "com.apple.menuextra.clock")
+            array_add quit_list "SystemUIServer"
+            ;;
+        *)
+            debug "Unknown domain $domain"
+            RESTART_REQUIRED=true
+            ;;
+    esac
+done
+
+# Restart services based on modified domains
+for app in "${quit_list[@]}"; do
+    restart_app "$app"
+done
+
+if [[ "$RESTART_REQUIRED" == "true" ]]; then
+    warn "Some changes require a restart to take effect"
+fi
