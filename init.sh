@@ -94,43 +94,43 @@ brewi git;
 clone_repo;
 
 # source remaining scripts (order is important)
-source $HOME/.dotfiles/scripts/rosetta2.sh;
+#source $HOME/.dotfiles/scripts/rosetta2.sh;
 source $HOME/.dotfiles/scripts/macos.sh;
-source $HOME/.dotfiles/scripts/homebrew.sh;
+#source $HOME/.dotfiles/scripts/homebrew.sh;
 
 # install brew formulae
-brewi neofetch;
-brewi neovim;
+#brewi neofetch;
+#brewi neovim;
 
 # install brew packages
-brewi 1password --cask;
-brewi ableton-live-suite@11 --cask;
-brewi adobe-creative-cloud --cask;
-brewi appcleaner --cask;
-brewi bambu-studio --cask;
-brewi beekeeper-studio --cask;
-brewi cursor --cask;
-brewi ghostty --cask; # TODO: Give full disk access.  Is this possible?
-brewi gitkraken --cask;
-brewi godot --cask;
-brewi google-chrome --cask;
-brewi handbrake --cask;
-brewi iina --cask;
-brewi imazing --cask;
-brewi izotope-product-portal --cask;
-brewi linear-linear --cask;
-brewi native-access --cask;
-brewi osquery --cask;
-brewi parallels --cask;
-brewi powershell --cask;
-brewi raycast --cask;
-brewi slack --cask;
-brewi superhuman --cask;
-brewi utm --cask;
-brewi waves-central --cask;
-brewi xnapper --cask;
-brewi wifi-explorer-pro --cask;
-brewi zoom --cask;
+#brewi 1password --cask;
+#brewi ableton-live-suite@11 --cask;
+#brewi adobe-creative-cloud --cask;
+#brewi appcleaner --cask;
+#brewi bambu-studio --cask;
+#brewi beekeeper-studio --cask;
+#brewi cursor --cask;
+#brewi ghostty --cask; # TODO: Give full disk access.  Is this possible?
+#brewi gitkraken --cask;
+#brewi godot --cask;
+#brewi google-chrome --cask;
+#brewi handbrake --cask;
+#brewi iina --cask;
+#brewi imazing --cask;
+#brewi izotope-product-portal --cask;
+#brewi linear-linear --cask;
+#brewi native-access --cask;
+#brewi osquery --cask;
+#brewi parallels --cask;
+#brewi powershell --cask;
+#brewi raycast --cask;
+#brewi slack --cask;
+#brewi superhuman --cask;
+#brewi utm --cask;
+#brewi waves-central --cask;
+#brewi xnapper --cask;
+#brewi wifi-explorer-pro --cask;
+#brewi zoom --cask;
 
 # check remaining apps vs casks
-check_casks;
+#check_casks;
