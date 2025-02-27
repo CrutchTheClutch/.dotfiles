@@ -91,7 +91,7 @@ quit_app() {
 
 # Check if System Preferences is running before attempting to quit
 # Note: On older macOS versions (before Ventura), it's called "System Preferences"
-quit_app "System Settings"
+#quit_app "System Settings"
 
 
 ###############################################################################
