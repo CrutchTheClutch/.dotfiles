@@ -41,20 +41,24 @@ default() {
     
     # Check current value first
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
+    debug "$(log 95 "$domain")Raw current value: '$current'"
+    debug "$(log 95 "$domain")Raw new value: '$value'"
+
     if [[ "$current" == "$value" ]]; then
         ok "$(log 95 "$domain") $description"
+        return
     fi
     
-    info "$(log 95 "$domain") $key invalid (current: $current -> new: $value)..."
+    info "$(log 95 "$domain")$key invalid..."
     defaults write "$domain" "$key" "$value"
     modify_domain "$domain"
 
     # Verify the setting
     current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [[ "$current" == "$value" ]]; then
-        ok "$(log 95 "$domain") $key updated, $description"
+        ok "$(log 95 "$domain")$key updated, $description"
     else
-        warn "$(log 95 "$domain") Failed to set $key to $value"
+        warn "$(log 95 "$domain")Failed to set $key to $value"
         return 1
     fi
 }
@@ -166,14 +170,14 @@ set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
 
 global() { default "NSGlobalDomain" $@; }
 
-#global "AppleLanguages" "Set primary language to English" -array "en-US"
+#TODO: This literally crashes the system: global "AppleLanguages" "Set primary language to English" -array "en-US"
 #global "AppleLocale" "Set locale to USA" "en_US@currency=USD"
 #global "AppleMeasurementUnits" "Set measurement units to inches" "inches"
 #global "AppleMetricUnits" "Disable metric system" false
 #global "AppleAccentColor" "Set accent color to purple" "5"
 #global "AppleAntiAliasingThreshold" "Set anti-aliasing threshold to 4" "4"
 #global "AppleHighlightColor" "Set highlight color to purple" "0.968627 0.831373 1.000000"
-#global "AppleInterfaceStyle" "Set dark interface style" "Dark"
+global "AppleInterfaceStyle" "Set dark interface style" "Dark"
 #global "AppleInterfaceStyleSwitchesAutomatically" "Disable automatic interface style switch" 0
 #global "AppleKeyboardUIMode" "Set keyboard UI mode to full control"  3
 #global "AppleMenuBarVisibleInFullscreen" "Disable menu bar in fullscreen"  0
@@ -381,38 +385,45 @@ finder "AppleShowAllFiles" "Show hidden files in Finder" 1
 
 
 RESTART_REQUIRED=false
-quit_list=()
+restart_list=()
 # Build list of services to restart
 for domain in "${MODIFIED_DOMAINS[@]}"; do
     case "$domain" in
         "NSGlobalDomain")
-            array_add quit_list "SystemUIServer"
-            array_add quit_list "Finder"
+            array_add restart_list "cfprefsd"
+            array_add restart_list "SystemUIServer"
+            array_add restart_list "Finder"
             ;;
         "com.apple.dock")
-            array_add quit_list "Dock" 
+            array_add restart_list "cfprefsd"
+            array_add restart_list "Dock" 
             ;;
         "com.apple.finder")
-            array_add quit_list "Finder"
+            array_add restart_list "cfprefsd"
+            array_add restart_list "Finder"
             ;;
         "com.apple.controlcenter")
-            array_add quit_list "ControlCenter"
+            array_add restart_list "cfprefsd"
+            array_add restart_list "ControlCenter"
             ;;
         "com.apple.Spotlight")
-            array_add quit_list "Spotlight"
+            array_add restart_list "cfprefsd"
+            array_add restart_list "Spotlight"
             ;;
         "com.apple.menuextra.clock")
-            array_add quit_list "SystemUIServer"
+            array_add restart_list "cfprefsd"
+            array_add restart_list "SystemUIServer"
             ;;
         *)
             debug "Unknown domain $domain"
+            array_add restart_list "cfprefsd"
             RESTART_REQUIRED=true
             ;;
     esac
 done
 
 # Restart services based on modified domains
-for app in "${quit_list[@]}"; do
+for app in "${restart_list[@]}"; do
     restart_app "$app"
 done
 
