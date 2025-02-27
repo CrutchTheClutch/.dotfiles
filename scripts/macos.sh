@@ -1,10 +1,12 @@
 #!/bin/zsh
 
 array_add() {
-    local array=("$@")
-    local item=$1
-    if [[ ! " ${array[@]} " =~ " ${item} " ]]; then
-        array+=("$item")
+    local array_name=$1
+    local item=$2
+    local array_ref="$array_name[@]"
+    
+    if [[ ! " ${!array_ref} " =~ " ${item} " ]]; then
+        eval "$array_name+=(\"\$item\")"
     fi
 }
 
