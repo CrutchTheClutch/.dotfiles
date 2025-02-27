@@ -387,6 +387,7 @@ finder "AppleShowAllFiles" "Show hidden files in Finder" 1
 RESTART_REQUIRED=false
 restart_list=()
 # Build list of services to restart
+# TODO: something not working here (system restart required)
 for domain in "${MODIFIED_DOMAINS[@]}"; do
     case "$domain" in
         "NSGlobalDomain")
@@ -396,23 +397,28 @@ for domain in "${MODIFIED_DOMAINS[@]}"; do
             ;;
         "com.apple.dock")
             array_add restart_list "cfprefsd"
-            array_add restart_list "Dock" 
+            array_add restart_list "Dock"
+            RESTART_REQUIRED=true
             ;;
         "com.apple.finder")
             array_add restart_list "cfprefsd"
             array_add restart_list "Finder"
+            RESTART_REQUIRED=true
             ;;
         "com.apple.controlcenter")
             array_add restart_list "cfprefsd"
             array_add restart_list "ControlCenter"
+            RESTART_REQUIRED=true
             ;;
         "com.apple.Spotlight")
             array_add restart_list "cfprefsd"
             array_add restart_list "Spotlight"
+            RESTART_REQUIRED=true
             ;;
         "com.apple.menuextra.clock")
             array_add restart_list "cfprefsd"
             array_add restart_list "SystemUIServer"
+            RESTART_REQUIRED=true
             ;;
         *)
             debug "Unknown domain $domain"
