@@ -71,8 +71,57 @@ set_flag() {
 
 quit_app() {
     local app=$1
-    if killall "$app" 2>/dev/null || true; then
-        ok "$app killed to apply changes"
+    local max_attempts=30  # Maximum number of attempts to wait
+    local wait_interval=0.5  # Time between checks in seconds
+
+    # Kill the app
+    if killall "$app" 2>/dev/null; then
+        info "Killing $app..."
+        
+        # Wait for process to fully terminate
+        while pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
+            info "Waiting for $app to terminate..."
+            sleep $wait_interval
+            ((max_attempts--))
+        done
+
+        if ! pgrep "$app" >/dev/null; then
+            ok "$app successfully killed"
+        else
+            fail "$app failed to kill, aborting out of precaution.  Please kill the app manually."
+        fi
+    fi
+}
+
+restart_app() {
+    local app=$1
+    local max_attempts=30  # Maximum number of attempts to wait
+    local wait_interval=0.5  # Time between checks in seconds
+
+    # Kill the app
+    if killall "$app" 2>/dev/null; then
+        info "Killing $app..."
+        
+        # Wait for process to fully terminate
+        while pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
+            info "Waiting for $app to terminate..."
+            sleep $wait_interval
+            ((max_attempts--))
+        done
+
+        # Wait for process to start again
+        max_attempts=30  # Reset counter
+        while ! pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
+            info "Waiting for $app to restart..."
+            sleep $wait_interval
+            ((max_attempts--))
+        done
+
+        if pgrep "$app" >/dev/null; then
+            ok "$app successfully restarted"
+        else
+            fail "$app failed to restart, aborting out of precaution.  Please restart your system to ensure stability."
+        fi
     fi
 }
 
