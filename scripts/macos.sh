@@ -39,17 +39,15 @@ default() {
     shift 3
     local value=$@
     
-    # Check current value first
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
-    debug "$(log 95 "$domain")Raw current value: '$current'"
-    debug "$(log 95 "$domain")Raw new value: '$value'"
-
     if [[ "$current" == "$value" ]]; then
-        ok "$(log 95 "$domain") $description"
+        ok "$(log 95 "$domain")$description"
         return
     fi
     
     info "$(log 95 "$domain")$key needs to be updated..."
+    debug "$(log 95 "$domain")Raw current value: '$current'"
+    debug "$(log 95 "$domain")Raw new value: '$value'"
     defaults write "$domain" "$key" "$value"
     modify_domain "$domain"
 
@@ -60,6 +58,19 @@ default() {
     else
         warn "$(log 95 "$domain")Failed to set $key to $value"
         return 1
+    fi
+}
+
+remove_default() {
+    local domain=$1 key=$2 description=$3
+    local current=$(defaults read "$domain" "$key" 2>/dev/null)
+    if [[ -n "$current" ]]; then
+        info "$(log 95 "$domain")$key needs to be removed..."
+        defaults delete "$domain" "$key"
+        modify_domain "$domain"
+        ok "$(log 95 "$domain")$key removed, $description"
+    else
+        ok "$(log 95 "$domain")$description"
     fi
 }
 
