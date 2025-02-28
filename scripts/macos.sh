@@ -37,18 +37,28 @@ reset_defaults() {
 default() {
     local domain=$1 key=$2 description=$3 
     shift 3
+    local type_flag=""
     local value=$@
+
+    # Check if we're dealing with a type flag
+    if [[ "$1" == -* ]]; then
+        type_flag=$1
+        shift
+        value=$@
+    fi
     
+    # Get the current value
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [[ "$current" == "$value" ]]; then
         ok "$(log 95 "$domain")$description"
         return
     fi
     
+    # Update the setting
     info "$(log 95 "$domain")$key needs to be updated..."
     debug "$(log 95 "$domain")Raw current value: '$current'"
     debug "$(log 95 "$domain")Raw new value: '$value'"
-    defaults write "$domain" "$key" "$value"
+    defaults write "$domain" "$key" $type_flag $value
     modify_domain "$domain"
 
     # Verify the setting
@@ -112,8 +122,8 @@ quit_app() {
 
 restart_app() {
     local app=$1
-    local max_attempts=30  # Maximum number of attempts to wait
-    local wait_interval=0.5  # Time between checks in seconds
+    local max_attempts=15  # Maximum number of attempts to wait
+    local wait_interval=2  # Time between checks in seconds
 
     # Kill the app
     if killall "$app" 2>/dev/null; then
@@ -127,7 +137,7 @@ restart_app() {
         done
 
         # Wait for process to start again
-        max_attempts=30  # Reset counter
+        max_attempts=15  # Reset counter
         while ! pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
             info "Waiting for $app to restart..."
             sleep $wait_interval
@@ -181,15 +191,11 @@ set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
 
 global() { default "NSGlobalDomain" $@; }
 
-#TODO: This literally crashes the system: global "AppleLanguages" "Set primary language to English" -array "en-US"
-#global "AppleLocale" "Set locale to USA" "en_US@currency=USD"
-#global "AppleMeasurementUnits" "Set measurement units to inches" "inches"
-#global "AppleMetricUnits" "Disable metric system" false
-#global "AppleAccentColor" "Set accent color to purple" "5"
-#global "AppleAntiAliasingThreshold" "Set anti-aliasing threshold to 4" "4"
-#global "AppleHighlightColor" "Set highlight color to purple" "0.968627 0.831373 1.000000"
-global "AppleInterfaceStyle" "Set dark interface style" "Dark"
-#global "AppleInterfaceStyleSwitchesAutomatically" "Disable automatic interface style switch" 0
+global "AppleAccentColor" "Set accent color to purple" -int 5
+global "AppleAntiAliasingThreshold" "Set anti-aliasing threshold to 4" -int 4
+global "AppleHighlightColor" "Set highlight color to purple" -string "0.968627 0.831373 1.000000 Purple"
+global "AppleInterfaceStyle" "Set dark interface style" -string "Dark"
+remove_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" "Disable automatic interface style switch"
 #global "AppleKeyboardUIMode" "Set keyboard UI mode to full control"  3
 #global "AppleMenuBarVisibleInFullscreen" "Disable menu bar in fullscreen"  0
 #global "AppleMiniaturizeOnDoubleClick" "Disable miniaturize on double click" 0
@@ -257,7 +263,7 @@ global "AppleInterfaceStyle" "Set dark interface style" "Dark"
 #default "com.apple.dock" "minimize-to-application" "Minimize windows into application icon" 0
 #default "com.apple.dock" "mouse-over-hilite-stack" "Disable drag windows to top of screen to enter Mission Control" 0
 #default "com.apple.dock" "mru-spaces" "Disable automatically rearrange Spaces based on most recent use" 0
-default "com.apple.dock" "orientation" "Position dock on left side" "left"
+default "com.apple.dock" "orientation" "Position dock on left side" -string "left"
 default "com.apple.dock" "persistent-apps" "Remove all apps from dock" -array
 default "com.apple.dock" "persistent-others" "Remove all others from dock" -array
 #default "com.apple.dock" "show-process-indicators" "Show indicators for open applications" 1
@@ -266,7 +272,7 @@ default "com.apple.dock" "persistent-others" "Remove all others from dock" -arra
 #default "com.apple.dock" "springboard-hide-duration" "Remove Launchpad hide animation" 0
 #default "com.apple.dock" "springboard-show-duration" "Remove Launchpad show animation" 0
 #default "com.apple.dock" "springboard-page-duration" "Remove Launchpad page turning animation" 0
-#default "com.apple.dock" "static-only" "Enable static dock" true
+default "com.apple.dock" "static-only" "Enable static dock" -bool true
 #default "com.apple.dock" "tilesize" "Set dock size to 32 pixels" 32
 #default "com.apple.dock" "workspace-switch-duration" "Remove desktop switch animation" 0.0
 #default "com.apple.dock" "workspaces-edge-delay" "Remove desktop edge switch animation" 0.0
