@@ -200,7 +200,7 @@ remove_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" "Disa
 #global "AppleMenuBarVisibleInFullscreen" "Disable menu bar in fullscreen"  0
 #global "AppleMiniaturizeOnDoubleClick" "Disable miniaturize on double click" 0
 #global "AppleReduceDesktopTinting" "Enable desktop tinting" 0
-#global "AppleShowAllExtensions" "Show filename extensions" 1
+global "AppleShowAllExtensions" "Show filename extensions" -bool true
 #global "NSAutomaticWindowAnimationsEnabled" "Disable window animations" false
 #global "NavPanelFileListModeForOpenMode" "Show column view in open mode" 2
 #global "NavPanelFileListModeForSaveMode" "Show column view in save mode" 2
@@ -273,7 +273,7 @@ default "com.apple.dock" "persistent-others" "Remove all others from dock" -arra
 #default "com.apple.dock" "springboard-show-duration" "Remove Launchpad show animation" 0
 #default "com.apple.dock" "springboard-page-duration" "Remove Launchpad page turning animation" 0
 default "com.apple.dock" "static-only" "Enable static dock" -bool true
-#default "com.apple.dock" "tilesize" "Set dock size to 32 pixels" 32
+default "com.apple.dock" "tilesize" "Set dock size to 32 pixels" -int 32
 #default "com.apple.dock" "workspace-switch-duration" "Remove desktop switch animation" 0.0
 #default "com.apple.dock" "workspaces-edge-delay" "Remove desktop edge switch animation" 0.0
 #default "com.apple.dock" "wvous-bl-corner" "Disable bottom-left hot corner" 0
@@ -291,7 +291,7 @@ default "com.apple.dock" "static-only" "Enable static dock" -bool true
 
 finder() { default "com.apple.finder" $@; }
 
-finder "AppleShowAllFiles" "Show hidden files in Finder" 1
+finder "AppleShowAllFiles" "Show hidden files in Finder" -bool true
 #finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
 #    "iconSize" 64 \
 #    "gridSpacing" 54 \
@@ -323,7 +323,7 @@ finder "AppleShowAllFiles" "Show hidden files in Finder" 1
 #finder "ShowExternalHardDrivesOnDesktop" "Hide external hard drives on desktop" 0
 #finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" 0
 #finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" 0
-#finder "ShowPathbar" "Show path bar in Finder" 1
+finder "ShowPathbar" "Show path bar in Finder" -bool true
 #finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" 0
 #finder "ShowStatusBar" "Show status bar in Finder" 1
 #finder "StandardViewSettings" "Configure standard view settings (legacy)" -dict \
