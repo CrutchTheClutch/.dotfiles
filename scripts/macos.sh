@@ -326,11 +326,11 @@ finder "AppleShowAllFiles" "Show hidden files in Finder" -bool true
 #finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1
 #finder "SearchRecentsSavedViewStyle" "Use list view in Finder recents by default" "Nlsv"
 #finder "SearchViewSettings" "Set list view as default for search results" -dict "ViewStyle" "Nlsv"
-#finder "ShowExternalHardDrivesOnDesktop" "Hide external hard drives on desktop" 0
-#finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" 0
-#finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" 0
+finder "ShowExternalHardDrivesOnDesktop" "Hide external disks on desktop" -bool false
+finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" -bool false
+finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" -bool false
 finder "ShowPathbar" "Show path bar in Finder" -bool true
-#finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" 0
+finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" -bool false
 #finder "ShowStatusBar" "Show status bar in Finder" 1
 #finder "StandardViewSettings" "Configure standard view settings (legacy)" -dict \
 #    "ViewStyle" "Nlsv" \
@@ -365,9 +365,12 @@ finder "ShowPathbar" "Show path bar in Finder" -bool true
 # Menu Extra                                                                  #
 ###############################################################################
 
-#default "com.apple.menuextra.clock" "FlashDateSeparators" "Enable flash date separators" 1
-#default "com.apple.menuextra.clock" "ShowDate" "Show date in clock" 1
-#default "com.apple.menuextra.clock" "ShowDayOfWeek" "Show day of week in clock" 1
+default "com.apple.menuextra.clock" "FlashDateSeparators" "Enable flash date separators" -bool true
+default "com.apple.menuextra.clock" "IsAnalog" "Set clock to digital" -bool false
+default "com.apple.menuextra.clock" "ShowAMPM" "Show AM/PM in clock" -bool true
+default "com.apple.menuextra.clock" "ShowDate" "Show date in clock" -bool true
+default "com.apple.menuextra.clock" "ShowDayOfWeek" "Show day of week in clock" -bool true
+default "com.apple.menuextra.clock" "ShowSeconds" "Hide seconds in clock" -bool false
 
 ###############################################################################
 # NetworkBrowser                                                              #
