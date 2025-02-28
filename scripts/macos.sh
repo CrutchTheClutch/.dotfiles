@@ -11,11 +11,7 @@ array_add() {
 }
 
 MODIFIED_DOMAINS=()
-
-modify_domain() {
-    local domain=$1
-    array_add MODIFIED_DOMAINS "$domain"
-}
+modify_domain() { array_add MODIFIED_DOMAINS "$1"; }
 
 # Helper function to reset defaults, used for development
 reset_defaults() {
@@ -34,6 +30,16 @@ reset_defaults() {
     fi
 }
 
+normalize_bool() { [[ "$1" == "true" || "$1" == "1" ]] && echo "1" || echo "0"; }
+compare() {
+    local type=$1 val1=$2 val2=$3
+    [[ "$type" == "-bool" ]] && {
+        val1=$(normalize_bool "$val1")
+        val2=$(normalize_bool "$val2")
+    }
+    [[ "$val1" == "$val2" ]]
+}
+
 default() {
     local domain=$1 key=$2 description=$3 
     shift 3
@@ -49,7 +55,7 @@ default() {
     
     # Get the current value
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
-    if [[ "$current" == "$value" ]]; then
+    if compare "$type_flag" "$current" "$value"; then
         ok "$(log 95 "$domain")$description"
         return
     fi
@@ -63,7 +69,7 @@ default() {
 
     # Verify the setting
     current=$(defaults read "$domain" "$key" 2>/dev/null)
-    if [[ "$current" == "$value" ]]; then
+    if compare "$type_flag" "$current" "$value"; then
         ok "$(log 95 "$domain")$key updated, $description"
     else
         warn "$(log 95 "$domain")Failed to set $key to $value"
