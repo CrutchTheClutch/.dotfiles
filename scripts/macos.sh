@@ -32,27 +32,35 @@ reset_defaults() {
 
 normalize_bool() { [[ "$1" == "true" || "$1" == "1" ]] && echo "1" || echo "0"; }
 compare() {
-    local type=$1 val1=$2 val2=$3
+    local type=$1 current_default=$2 new_default=$3
     [[ "$type" == "-bool" ]] && {
-        val1=$(normalize_bool "$val1")
-        val2=$(normalize_bool "$val2")
+        current_default=$(normalize_bool "$current_default")
+        new_default=$(normalize_bool "$new_default")
     }
-    [[ "$val1" == "$val2" ]]
+    [[ "$type" == "-array" ]] && {
+        current_default=$(echo "$current_default" | tr -d '[:space:]')
+        new_default=$(echo "$new_default" | tr -d '[:space:]')
+        [[ "$current_default" == "()" && -z "$new_default" ]] && return 0 # ensure empty array matches new null
+        [[ "$current_default" == "" && -z "$new_default" ]] && return 1 # ensure empty string does not match null
+    }
+    [[ "$current_default" == "$new_default" ]]
 }
 
 default() {
     local domain=$1 key=$2 description=$3 
     shift 3
     local type_flag=""
-    local value=$@
+    local value=""
 
     # Check if we're dealing with a type flag
     if [[ "$1" == -* ]]; then
         type_flag=$1
         shift
+        [[ $# -gt 0 ]] && value=$@
+    else
         value=$@
     fi
-    
+
     # Get the current value
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
     if compare "$type_flag" "$current" "$value"; then
@@ -64,7 +72,12 @@ default() {
     info "$(log 95 "$domain")$key needs to be updated..."
     debug "$(log 95 "$domain")Raw current value: '$current'"
     debug "$(log 95 "$domain")Raw new value: '$value'"
-    defaults write "$domain" "$key" $type_flag $value
+
+    if [[ -z "$value" ]]; then
+        defaults write "$domain" "$key" $type_flag
+    else
+        defaults write "$domain" "$key" $type_flag $value
+    fi
     modify_domain "$domain"
 
     # Verify the setting
