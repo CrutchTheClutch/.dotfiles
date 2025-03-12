@@ -221,11 +221,11 @@ remove_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" "Disa
 #global "AppleReduceDesktopTinting" "Enable desktop tinting" 0
 global "AppleShowAllExtensions" "Show filename extensions" -bool true
 #global "NSAutomaticWindowAnimationsEnabled" "Disable window animations" false
-#global "NavPanelFileListModeForOpenMode" "Show column view in open mode" 2
-#global "NavPanelFileListModeForSaveMode" "Show column view in save mode" 2
-#global "NSNavPanelExpandedStateForSaveMode" "Expand save panel by default (legacy)" true
-#global "NSNavPanelExpandedStateForSaveMode2" "Expand save panel by default" true
-#global "NSTableViewDefaultSizeMode" "Set table view default size to medium" 2
+global "NavPanelFileListModeForOpenMode" "Show column view in open mode" -int 2
+global "NavPanelFileListModeForSaveMode" "Show column view in save mode" -int 2
+global "NSNavPanelExpandedStateForSaveMode" "Expand save panel by default (legacy)" -bool true
+global "NSNavPanelExpandedStateForSaveMode2" "Expand save panel by default" -bool true
+global "NSTableViewDefaultSizeMode" "Set table view default size to medium" -int 2
 #global "NSWindowResizeTime" "Remove window resize animation" 0.001
 #global "PMPrintingExpandedStateForPrint" "Expand print panel by default (legacy)" true
 #global "PMPrintingExpandedStateForPrint2" "Expand print panel by default" true
@@ -271,14 +271,14 @@ global "AppleShowAllExtensions" "Show filename extensions" -bool true
 ###############################################################################
 
 #default "com.apple.dock" "auto-space-switching-enabled" "Disable auto switching to Space with open windows for an application" 0
-#default "com.apple.dock" "autohide" "Auto-hide dock" 1
-#default "com.apple.dock" "autohide-delay" "Remove dock auto-hide delay" 0.0
-#default "com.apple.dock" "autohide-time-modifier" "Remove dock auto-hide time modifier" 0.0
+default "com.apple.dock" "autohide" "Auto-hide dock" -bool true
+default "com.apple.dock" "autohide-delay" "Remove dock auto-hide delay" -int 0
+default "com.apple.dock" "autohide-time-modifier" "Remove dock auto-hide time modifier" -int 0
 #default "com.apple.dock" "expose-animation-duration" "Speed up Mission Control animations" 0.0
 #default "com.apple.dock" "expose-group-by-app" "Disable grouping windows by application in Mission Control" 0
 #default "com.apple.dock" "launchanim" "Disable app launch bounce" 0
 #default "com.apple.dock" "magnification" "Disable magnification" 0
-#default "com.apple.dock" "mineffect" "Change minimize effect to scale (faster than genie)" "scale"
+default "com.apple.dock" "mineffect" "Change minimize effect to scale (faster than genie)" -string "scale"
 #default "com.apple.dock" "minimize-to-application" "Minimize windows into application icon" 0
 #default "com.apple.dock" "mouse-over-hilite-stack" "Disable drag windows to top of screen to enter Mission Control" 0
 #default "com.apple.dock" "mru-spaces" "Disable automatically rearrange Spaces based on most recent use" 0
@@ -286,7 +286,7 @@ default "com.apple.dock" "orientation" "Position dock on left side" -string "lef
 default "com.apple.dock" "persistent-apps" "Remove all apps from dock" -array
 default "com.apple.dock" "persistent-others" "Remove all others from dock" -array
 #default "com.apple.dock" "show-process-indicators" "Show indicators for open applications" 1
-#default "com.apple.dock" "show-recents" "Disable recent applications" 0
+default "com.apple.dock" "show-recents" "Disable recent applications" -bool false
 #default "com.apple.dock" "spans-displays" "Enable separate Spaces for each display" 1
 #default "com.apple.dock" "springboard-hide-duration" "Remove Launchpad hide animation" 0
 #default "com.apple.dock" "springboard-show-duration" "Remove Launchpad show animation" 0
@@ -325,15 +325,15 @@ finder "AppleShowAllFiles" "Show hidden files in Finder" -bool true
 #    "gridSpacing" 54 \
 #    "showItemInfo" false \
 #    "arrangeBy" "name"
-#finder "FXDefaultSearchScope" "Search current folder by default in Finder" "SCcf"
-#finder "FXEnableExtensionChangeWarning" "Disable warning when changing a file extension" false
+finder "FXDefaultSearchScope" "Search current folder by default in Finder" -string "SCcf"
+finder "FXEnableExtensionChangeWarning" "Disable warning when changing a file extension" -bool false
 #finder "FXInfoPanesExpanded" \
 #    "Expand the following File Info panes: General, Open with, Sharing & Permissions" "-dict" \
 #    "General" true \
 #    "OpenWith" true \
 #    "Privileges" true
 #finder "FXPreferredSearchViewStyle" "Use list view in search results by default" "Nlsv"
-#finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" "Nlsv"
+finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" -string "Nlsv"
 #finder "FXRecentFoldersViewStyle" "Use list view in Finder recents by default" "Nlsv"
 #finder "FXSearchViewSettings" "Set list view as default for search results (legacy)" -dict "ViewStyle" "Nlsv"
 #finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1

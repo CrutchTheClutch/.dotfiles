@@ -24,3 +24,6 @@ List of things I need to configure and automate for simple dev env setup (in no 
 - [ ] yabai?
 - [ ] skhd?
 - [ ] Actual .dotfiles symlinking
+- [ ] UTM (full disk access)
+- [ ] CrystalFetch
+- [ ] QEMU-aarch64 (full disk access)
