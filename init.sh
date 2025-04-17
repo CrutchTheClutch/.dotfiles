@@ -110,6 +110,7 @@ source $HOME/.dotfiles/scripts/macos.sh;
 #brewi bambu-studio --cask;
 #brewi beekeeper-studio --cask;
 #brewi cursor --cask;
+#brewi dotnet --cask;
 #brewi ghostty --cask; # TODO: Give full disk access.  Is this possible?
 #brewi gitkraken --cask;
 #brewi godot --cask;
