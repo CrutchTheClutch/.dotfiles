@@ -1,77 +1,76 @@
 #!/bin/zsh
 
-array_add() {
-    local array_name=$1
-    local item=$2
-    
-    # Use eval to check if item exists in array
-    if ! eval "print -l \"\${${array_name}[@]}\"" | grep -q "^${item}\$"; then
-        eval "${array_name}+=(\"\$item\")"
-    fi
+array_contains() {
+    local item="$1"
+    shift
+    local arr=("$@")
+    for e in "${arr[@]}"; do
+        [[ "$e" == "$item" ]] && return 0
+    done
+    return 1
 }
 
 MODIFIED_DOMAINS=()
-modify_domain() { array_add MODIFIED_DOMAINS "$1"; }
+modify_domain() {
+    local domain="$1"
+    array_contains "$domain" "${MODIFIED_DOMAINS[@]}" || MODIFIED_DOMAINS+=("$domain")
+}
 
-# Helper function to reset defaults, used for development
 reset_defaults() {
     local domain=$1
     local timestamp=$(date +"%Y%m%d_%H%M%S")
     local backup_file="$HOME/Desktop/${domain}_${timestamp}.backup.txt"
-    
-    info "$(log 95 "$domain")Backing up preferences to $backup_file"
+
+    info "$(color 95 "$domain") Backing up preferences to $backup_file"
     if defaults read "$domain" > "$backup_file"; then
-        info "$(log 95 "$domain")Resetting preferences"
+        info "$(color 95 "$domain") Resetting preferences"
         defaults delete "$domain"
-        ok "$(log 95 "$domain")Reset all settings to defaults"
+        ok "$(color 95 "$domain") Reset all settings to defaults"
         modify_domain "$domain"
     else
-        warn "$(log 95 "$domain")Failed to backup preferences, skipping reset"
+        warn "$(color 95 "$domain") Failed to backup preferences, skipping reset"
     fi
 }
 
 normalize_bool() { [[ "$1" == "true" || "$1" == "1" ]] && echo "1" || echo "0"; }
+
 compare() {
     local type=$1 current_default=$2 new_default=$3
-    [[ "$type" == "-bool" ]] && {
+    if [[ "$type" == "-bool" ]]; then
         current_default=$(normalize_bool "$current_default")
         new_default=$(normalize_bool "$new_default")
-    }
-    [[ "$type" == "-array" ]] && {
+    elif [[ "$type" == "-array" ]]; then
         current_default=$(echo "$current_default" | tr -d '[:space:]')
         new_default=$(echo "$new_default" | tr -d '[:space:]')
-        [[ "$current_default" == "()" && -z "$new_default" ]] && return 0 # ensure empty array matches new null
-        [[ "$current_default" == "" && -z "$new_default" ]] && return 1 # ensure empty string does not match null
-    }
+        [[ "$current_default" == "()" && -z "$new_default" ]] && return 0
+        [[ "$current_default" == "" && -z "$new_default" ]] && return 1
+    fi
     [[ "$current_default" == "$new_default" ]]
 }
 
 default() {
-    local domain=$1 key=$2 description=$3 
+    local domain=$1 key=$2 description=$3
     shift 3
     local type_flag=""
     local value=""
 
-    # Check if we're dealing with a type flag
     if [[ "$1" == -* ]]; then
         type_flag=$1
         shift
-        [[ $# -gt 0 ]] && value=$@
+        [[ $# -gt 0 ]] && value=$@ || true
     else
         value=$@
     fi
 
-    # Get the current value
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
     if compare "$type_flag" "$current" "$value"; then
-        ok "$(log 95 "$domain")$description"
+        ok "$(color 95 "$domain") $description"
         return
     fi
-    
-    # Update the setting
-    info "$(log 95 "$domain")$key needs to be updated..."
-    debug "$(log 95 "$domain")Raw current value: '$current'"
-    debug "$(log 95 "$domain")Raw new value: '$value'"
+
+    info "$(color 95 "$domain") $key needs to be updated..."
+    debug "$(color 95 "$domain") Raw current value: '$current'"
+    debug "$(color 95 "$domain") Raw new value: '$value'"
 
     if [[ -z "$value" ]]; then
         defaults write "$domain" "$key" $type_flag
@@ -80,12 +79,11 @@ default() {
     fi
     modify_domain "$domain"
 
-    # Verify the setting
     current=$(defaults read "$domain" "$key" 2>/dev/null)
     if compare "$type_flag" "$current" "$value"; then
-        ok "$(log 95 "$domain")$key updated, $description"
+        ok "$(color 95 "$domain") $key updated, $description"
     else
-        warn "$(log 95 "$domain")Failed to set $key to $value"
+        warn "$(color 95 "$domain") Failed to set $key to $value"
         return 1
     fi
 }
@@ -94,384 +92,338 @@ remove_default() {
     local domain=$1 key=$2 description=$3
     local current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [[ -n "$current" ]]; then
-        info "$(log 95 "$domain")$key needs to be removed..."
+        info "$(color 95 "$domain") $key needs to be removed..."
         defaults delete "$domain" "$key"
         modify_domain "$domain"
-        ok "$(log 95 "$domain")$key removed, $description"
+        ok "$(color 95 "$domain") $key removed, $description"
     else
-        ok "$(log 95 "$domain")$description"
+        ok "$(color 95 "$domain") $description"
     fi
 }
 
+color() { printf "\033[0;%sm%s\033[0m" "$1" "$2"; }
+global() { default "NSGlobalDomain" "$@"; }
+finder() { default "com.apple.finder" "$@"; }
+
 set_flag() {
-    local path=$1 flag=$2 enable=$3 description=$4
-    local current=$(/usr/bin/chflags -h "$path" 2>/dev/null)
-    
-    if [[ "$enable" == "true" && "$current" != *"$flag"* ]] || [[ "$enable" == "false" && "$current" == *"$flag"* ]]; then
-        info "Setting $flag flag to $enable on $path..."
-        /usr/bin/chflags ${enable:+""}"no"${enable:+""}$flag "$path"
+    local path="$1" flag="$2" enable="$3" description="$4"
+    local current_flags
+    current_flags=$(ls -lOd "$path" 2>/dev/null | /usr/bin/awk '{print $5}') || true
+
+    local has_flag=false
+    [[ "$current_flags" == *"$flag"* ]] && has_flag=true || true
+
+    if [[ "$enable" == "true" && "$has_flag" == "false" ]]; then
+        info "Setting $flag on $path..."
+        chflags "$flag" "$path"
+        ok "$description"
+    elif [[ "$enable" == "false" && "$has_flag" == "true" ]]; then
+        info "Removing $flag from $path..."
+        chflags "no$flag" "$path"
+        ok "$description"
+    else
+        ok "$description"
     fi
-    # TODO: make this better
-    ok "$description"
+}
+
+wait_for_process() {
+    local process="$1" state="$2" timeout="${3:-15}"
+    local elapsed=0
+
+    while (( elapsed < timeout )); do
+        if [[ "$state" == "stopped" ]]; then
+            pgrep -q "$process" || return 0
+        else
+            pgrep -q "$process" && return 0
+        fi
+        sleep 0.5
+        (( elapsed++ ))
+    done
+    return 1
 }
 
 quit_app() {
-    local app=$1
-    local max_attempts=30  # Maximum number of attempts to wait
-    local wait_interval=0.5  # Time between checks in seconds
+    local app="$1"
+    pgrep -q "$app" || return 0
 
-    # Kill the app
-    if killall "$app" 2>/dev/null; then
-        info "Killing $app..."
-        
-        # Wait for process to fully terminate
-        while pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
-            info "Waiting for $app to terminate..."
-            sleep $wait_interval
-            ((max_attempts--))
-        done
+    info "Quitting $app..."
+    killall "$app" 2>/dev/null || true
 
-        if ! pgrep "$app" >/dev/null; then
-            ok "$app successfully killed"
-        else
-            fail "$app failed to kill, aborting out of precaution.  Please kill the app manually."
-        fi
+    if wait_for_process "$app" "stopped" 15; then
+        ok "$app quit"
+    else
+        fail "$app failed to quit"
     fi
 }
 
 restart_app() {
-    local app=$1
-    local max_attempts=15  # Maximum number of attempts to wait
-    local wait_interval=2  # Time between checks in seconds
+    local app="$1"
+    pgrep -q "$app" || return 0
 
-    # Kill the app
-    if killall "$app" 2>/dev/null; then
-        info "Killing $app..."
-        
-        # Wait for process to fully terminate
-        while pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
-            info "Waiting for $app to terminate..."
-            sleep $wait_interval
-            ((max_attempts--))
-        done
+    info "Restarting $app..."
+    killall "$app" 2>/dev/null || true
 
-        # Wait for process to start again
-        max_attempts=15  # Reset counter
-        while ! pgrep "$app" >/dev/null && [ $max_attempts -gt 0 ]; do
-            info "Waiting for $app to restart..."
-            sleep $wait_interval
-            ((max_attempts--))
-        done
-
-        if pgrep "$app" >/dev/null; then
-            ok "$app successfully restarted"
-        else
-            fail "$app failed to restart, aborting out of precaution.  Please restart your system to ensure stability."
-        fi
+    if wait_for_process "$app" "started" 10; then
+        ok "$app restarted"
+    else
+        warn "$app may need manual restart"
     fi
 }
 
-#disable_system_app() {
-#    local app=$1
-#    local app_path="/System/Applications/${app}.app"
-#    local executable_path="$app_path/Contents/MacOS/$app"
-#
-#    if [ ! -e "$app_path" ]; then
-#        ok "$app is not installed"
-#        return
-#    fi
-#
-#    quit_app "${app}"
-#}
+configure_macos() {
+    info "Configuring macOS..."
+    quit_app "System Settings"
 
-# Check if System Preferences is running before attempting to quit
-# Note: On older macOS versions (before Ventura), it's called "System Preferences"
-quit_app "System Settings"
+    ############################################################################
+    # SYSTEM                                                                   #
+    ############################################################################
 
+    set_flag "$HOME/Library" "hidden" false "Show ~/Library folder by default"
+    set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
 
-###############################################################################
-# SYSTEM                                                                      #
-###############################################################################
+    ############################################################################
+    # NSGlobalDomain                                                           #
+    ############################################################################
 
-#SYSTEM_APPS=(
-#    "Tips"
-#)
+    global "AppleAccentColor" "Set accent color to purple" -int 5
+    global "AppleAntiAliasingThreshold" "Set anti-aliasing threshold to 4" -int 4
+    global "AppleHighlightColor" "Set highlight color to purple" -string "0.968627 0.831373 1.000000 Purple"
+    global "AppleInterfaceStyle" "Set dark interface style" -string "Dark"
+    remove_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" "Disable automatic interface style switch"
+    #global "AppleKeyboardUIMode" "Set keyboard UI mode to full control" 3
+    #global "AppleMenuBarVisibleInFullscreen" "Disable menu bar in fullscreen" 0
+    #global "AppleMiniaturizeOnDoubleClick" "Disable miniaturize on double click" 0
+    #global "AppleReduceDesktopTinting" "Enable desktop tinting" 0
+    global "AppleShowAllExtensions" "Show filename extensions" -bool true
+    #global "NSAutomaticWindowAnimationsEnabled" "Disable window animations" false
+    global "NavPanelFileListModeForOpenMode" "Show list view in open dialogs" -int 1
+    global "NavPanelFileListModeForSaveMode" "Show list view in save dialogs" -int 1
+    global "AppleShowAllFiles" "Show hidden files in open/save dialogs" -bool true
+    global "NSNavPanelExpandedStateForSaveMode" "Expand save panel by default (legacy)" -bool true
+    global "NSNavPanelExpandedStateForSaveMode2" "Expand save panel by default" -bool true
+    global "NSTableViewDefaultSizeMode" "Set table view default size to medium" -int 2
+    #global "NSWindowResizeTime" "Remove window resize animation" 0.001
+    #global "PMPrintingExpandedStateForPrint" "Expand print panel by default (legacy)" true
+    #global "PMPrintingExpandedStateForPrint2" "Expand print panel by default" true
+    #global "ReduceMotion" "Disable motion animations" true
+    #global "com.apple.mouse.scaling" "Set mouse scaling to 0.875 (sensitivity)" 0.875
+    #global "com.apple.sound.beep.volume" "Disable system alert sound" 0
+    #global "com.apple.sound.uiaudio.enabled" "Disable UI sounds" 0
+    #global "com.apple.springing.delay" "Disable spring loading delay for directories" 0.001
+    #global "com.apple.springing.enabled" "Enable spring loading for directories" 1
+    #global "com.apple.trackpad.forceClick" "Enable force click on trackpad" 1
 
-#for app in "${SYSTEM_APPS[@]}"; do
-#    disable_system_app $app
-#done
+    ############################################################################
+    # Apple Symbolic Hotkeys                                                   #
+    ############################################################################
 
-set_flag "$HOME/Library" "hidden" false "Show ~/Library folder by default"
-set_flag "/Volumes" "hidden" false "Show /Volumes folder by default"
+    #hotkey() { default "com.apple.symbolichotkeys" "$@"; }
+    #hotkey "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
+    #hotkey "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
 
-###############################################################################
-# NSGlobalDomain                                                              #
-###############################################################################
+    ############################################################################
+    # BezelServices                                                            #
+    ############################################################################
 
-global() { default "NSGlobalDomain" $@; }
+    #default "com.apple.BezelServices" "kDim" "Enable keyboard backlight auto-dim" 1
+    #default "com.apple.BezelServices" "kDimTime" "Disable keyboard backlight inactivity timeout" 0
 
-global "AppleAccentColor" "Set accent color to purple" -int 5
-global "AppleAntiAliasingThreshold" "Set anti-aliasing threshold to 4" -int 4
-global "AppleHighlightColor" "Set highlight color to purple" -string "0.968627 0.831373 1.000000 Purple"
-global "AppleInterfaceStyle" "Set dark interface style" -string "Dark"
-remove_default "NSGlobalDomain" "AppleInterfaceStyleSwitchesAutomatically" "Disable automatic interface style switch"
-#global "AppleKeyboardUIMode" "Set keyboard UI mode to full control"  3
-#global "AppleMenuBarVisibleInFullscreen" "Disable menu bar in fullscreen"  0
-#global "AppleMiniaturizeOnDoubleClick" "Disable miniaturize on double click" 0
-#global "AppleReduceDesktopTinting" "Enable desktop tinting" 0
-global "AppleShowAllExtensions" "Show filename extensions" -bool true
-#global "NSAutomaticWindowAnimationsEnabled" "Disable window animations" false
-global "NavPanelFileListModeForOpenMode" "Show column view in open mode" -int 2
-global "NavPanelFileListModeForSaveMode" "Show column view in save mode" -int 2
-global "NSNavPanelExpandedStateForSaveMode" "Expand save panel by default (legacy)" -bool true
-global "NSNavPanelExpandedStateForSaveMode2" "Expand save panel by default" -bool true
-global "NSTableViewDefaultSizeMode" "Set table view default size to medium" -int 2
-#global "NSWindowResizeTime" "Remove window resize animation" 0.001
-#global "PMPrintingExpandedStateForPrint" "Expand print panel by default (legacy)" true
-#global "PMPrintingExpandedStateForPrint2" "Expand print panel by default" true
-#global "ReduceMotion" "Disable motion animations" true
-#global "com.apple.mouse.scaling" "Set mouse scaling to 0.875 (sensitivity)" 0.875
-#global "com.apple.sound.beep.volume" "Disable system alert sound" 0
-#global "com.apple.sound.uiaudio.enabled" "Disable UI sounds" 0
-#global "com.apple.springing.delay" "Disable spring loading delay for directories" 0.001
-#global "com.apple.springing.enabled" "Enable spring loading for directories" 1
-#global "com.apple.trackpad.forceClick" "Enable force click on trackpad" 1
+    ############################################################################
+    # DesktopServices                                                          #
+    ############################################################################
 
-###############################################################################
-# Apple Symbolic Hotkeys                                                      #
-###############################################################################
+    #default "com.apple.desktopservices" "DSDontWriteNetworkStores" "Disable creation of .DS_Store files on network volumes" 1
+    #default "com.apple.desktopservices" "DSDontWriteUSBStores" "Disable creation of .DS_Store files on USB volumes" 1
 
-#hotkey() { default "com.apple.symbolichotkeys" $@; }
+    ############################################################################
+    # Dock                                                                     #
+    ############################################################################
 
-#hotkey "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
-#hotkey "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
+    #default "com.apple.dock" "auto-space-switching-enabled" "Disable auto switching to Space with open windows for an application" 0
+    default "com.apple.dock" "autohide" "Auto-hide dock" -bool true
+    default "com.apple.dock" "autohide-delay" "Remove dock auto-hide delay" -float 0
+    default "com.apple.dock" "autohide-time-modifier" "Remove dock auto-hide time modifier" -float 0
+    #default "com.apple.dock" "expose-animation-duration" "Speed up Mission Control animations" 0.0
+    #default "com.apple.dock" "expose-group-by-app" "Disable grouping windows by application in Mission Control" 0
+    #default "com.apple.dock" "launchanim" "Disable app launch bounce" 0
+    #default "com.apple.dock" "magnification" "Disable magnification" 0
+    default "com.apple.dock" "mineffect" "Change minimize effect to scale (faster than genie)" -string "scale"
+    #default "com.apple.dock" "minimize-to-application" "Minimize windows into application icon" 0
+    #default "com.apple.dock" "mouse-over-hilite-stack" "Disable drag windows to top of screen to enter Mission Control" 0
+    #default "com.apple.dock" "mru-spaces" "Disable automatically rearrange Spaces based on most recent use" 0
+    default "com.apple.dock" "orientation" "Position dock on left side" -string "left"
+    default "com.apple.dock" "persistent-apps" "Remove all apps from dock" -array
+    default "com.apple.dock" "persistent-others" "Remove all others from dock" -array
+    #default "com.apple.dock" "show-process-indicators" "Show indicators for open applications" 1
+    default "com.apple.dock" "show-recents" "Disable recent applications" -bool false
+    #default "com.apple.dock" "spans-displays" "Enable separate Spaces for each display" 1
+    #default "com.apple.dock" "springboard-hide-duration" "Remove Launchpad hide animation" 0
+    #default "com.apple.dock" "springboard-show-duration" "Remove Launchpad show animation" 0
+    #default "com.apple.dock" "springboard-page-duration" "Remove Launchpad page turning animation" 0
+    default "com.apple.dock" "static-only" "Enable static dock" -bool true
+    default "com.apple.dock" "tilesize" "Set dock size to 32 pixels" -int 32
+    #default "com.apple.dock" "workspace-switch-duration" "Remove desktop switch animation" 0.0
+    #default "com.apple.dock" "workspaces-edge-delay" "Remove desktop edge switch animation" 0.0
+    #default "com.apple.dock" "wvous-bl-corner" "Disable bottom-left hot corner" 0
+    #default "com.apple.dock" "wvous-bl-modifier" "Remove bottom-left hot corner modifier" 0
+    #default "com.apple.dock" "wvous-br-corner" "Disable bottom-right hot corner" 0
+    #default "com.apple.dock" "wvous-br-modifier" "Remove bottom-right hot corner modifier" 0
+    #default "com.apple.dock" "wvous-tl-corner" "Disable top-left hot corner" 0
+    #default "com.apple.dock" "wvous-tl-modifier" "Remove top-left hot corner modifier" 0
+    #default "com.apple.dock" "wvous-tr-corner" "Disable top-right hot corner" 0
+    #default "com.apple.dock" "wvous-tr-modifier" "Remove top-right hot corner modifier" 0
 
-###############################################################################
-# BezelServices                                                               #
-###############################################################################
+    ############################################################################
+    # Finder                                                                   #
+    ############################################################################
 
-#default "com.apple.BezelServices" "kDim" "Enable keyboard backlight auto-dim" 1
-#default "com.apple.BezelServices" "kDimTime" "Disable keyboard backlight inactivity timeout" 0
+    finder "AppleShowAllFiles" "Show hidden files in Finder" -bool true
+    #finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
+    #    "iconSize" 64 "gridSpacing" 54 "showItemInfo" 0 "labelOnBottom" true "arrangeBy" "name"
+    #finder "DisableAllAnimations" "Disable Finder animations" 1
+    #finder "FK_AppCentricShowSidebar" "Show sidebar in app-centric Finder" 1
+    #finder "FK_StandardViewSettings" "Configure standard view settings (new)" -dict "ViewStyle" "Nlsv"
+    finder "FXDefaultSearchScope" "Search current folder by default in Finder" -string "SCcf"
+    finder "FXEnableExtensionChangeWarning" "Disable warning when changing a file extension" -bool false
+    #finder "FXPreferredSearchViewStyle" "Use list view in search results by default" "Nlsv"
+    finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" -string "Nlsv"
+    #finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1
+    finder "ShowExternalHardDrivesOnDesktop" "Hide external disks on desktop" -bool false
+    finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" -bool false
+    finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" -bool false
+    finder "ShowPathbar" "Show path bar in Finder" -bool true
+    finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" -bool false
+    #finder "ShowStatusBar" "Show status bar in Finder" 1
+    #finder "_FXShowPosixPathInTitle" "Hide POSIX path in Finder title" 0
+    #finder "_FXSortFoldersFirst" "Show folders on top when sorting by name in Finder" 1
 
-###############################################################################
-# DesktopServices                                                             #
-###############################################################################
+    ############################################################################
+    # DiskImages                                                               #
+    ############################################################################
 
-#default "com.apple.desktopservices" "DSDontWriteNetworkStores" "Disable creation of .DS_Store files on network volumes" 1
-#default "com.apple.desktopservices" "DSDontWriteUSBStores" "Disable creation of .DS_Store files on USB volumes" 1
+    #default "com.apple.frameworks.diskimages" "auto-open-ro-root" "Open new Finder window when a read-only volume is mounted" 1
+    #default "com.apple.frameworks.diskimages" "auto-open-rw-root" "Open new Finder window when a read-write volume is mounted" 1
 
-###############################################################################
-# Dock                                                                        #
-###############################################################################
+    ############################################################################
+    # Help Viewer                                                              #
+    ############################################################################
 
-#default "com.apple.dock" "auto-space-switching-enabled" "Disable auto switching to Space with open windows for an application" 0
-default "com.apple.dock" "autohide" "Auto-hide dock" -bool true
-default "com.apple.dock" "autohide-delay" "Remove dock auto-hide delay" -int 0
-default "com.apple.dock" "autohide-time-modifier" "Remove dock auto-hide time modifier" -int 0
-#default "com.apple.dock" "expose-animation-duration" "Speed up Mission Control animations" 0.0
-#default "com.apple.dock" "expose-group-by-app" "Disable grouping windows by application in Mission Control" 0
-#default "com.apple.dock" "launchanim" "Disable app launch bounce" 0
-#default "com.apple.dock" "magnification" "Disable magnification" 0
-default "com.apple.dock" "mineffect" "Change minimize effect to scale (faster than genie)" -string "scale"
-#default "com.apple.dock" "minimize-to-application" "Minimize windows into application icon" 0
-#default "com.apple.dock" "mouse-over-hilite-stack" "Disable drag windows to top of screen to enter Mission Control" 0
-#default "com.apple.dock" "mru-spaces" "Disable automatically rearrange Spaces based on most recent use" 0
-default "com.apple.dock" "orientation" "Position dock on left side" -string "left"
-default "com.apple.dock" "persistent-apps" "Remove all apps from dock" -array
-default "com.apple.dock" "persistent-others" "Remove all others from dock" -array
-#default "com.apple.dock" "show-process-indicators" "Show indicators for open applications" 1
-default "com.apple.dock" "show-recents" "Disable recent applications" -bool false
-#default "com.apple.dock" "spans-displays" "Enable separate Spaces for each display" 1
-#default "com.apple.dock" "springboard-hide-duration" "Remove Launchpad hide animation" 0
-#default "com.apple.dock" "springboard-show-duration" "Remove Launchpad show animation" 0
-#default "com.apple.dock" "springboard-page-duration" "Remove Launchpad page turning animation" 0
-default "com.apple.dock" "static-only" "Enable static dock" -bool true
-default "com.apple.dock" "tilesize" "Set dock size to 32 pixels" -int 32
-#default "com.apple.dock" "workspace-switch-duration" "Remove desktop switch animation" 0.0
-#default "com.apple.dock" "workspaces-edge-delay" "Remove desktop edge switch animation" 0.0
-#default "com.apple.dock" "wvous-bl-corner" "Disable bottom-left hot corner" 0
-#default "com.apple.dock" "wvous-bl-modifier" "Remove bottom-left hot corner modifier" 0
-#default "com.apple.dock" "wvous-br-corner" "Disable bottom-right hot corner" 0
-#default "com.apple.dock" "wvous-br-modifier" "Remove bottom-right hot corner modifier" 0
-#default "com.apple.dock" "wvous-tl-corner" "Disable top-left hot corner" 0
-#default "com.apple.dock" "wvous-tl-modifier" "Remove top-left hot corner modifier" 0
-#default "com.apple.dock" "wvous-tr-corner" "Disable top-right hot corner" 0
-#default "com.apple.dock" "wvous-tr-modifier" "Remove top-right hot corner modifier" 0
+    #default "com.apple.helpviewer" "DevMode" "Show Help Viewer content in standard windows" 1
 
-###############################################################################
-# Finder                                                                      #
-###############################################################################
+    ############################################################################
+    # LaunchServices                                                           #
+    ############################################################################
 
-finder() { default "com.apple.finder" $@; }
+    #default "com.apple.LaunchServices" "LSQuarantine" "Disable quarantine for downloaded files" false
 
-finder "AppleShowAllFiles" "Show hidden files in Finder" -bool true
-#finder "DesktopViewSettings:IconViewSettings" "Configure desktop icon view" -dict \
-#    "iconSize" 64 \
-#    "gridSpacing" 54 \
-#    "showItemInfo" 0 \
-#    "labelOnBottom" true \
-#    "arrangeBy" "name"
-#finder "DisableAllAnimations" "Disable Finder animations" 1
-#finder "FK_AppCentricShowSidebar" "Show sidebar in app-centric Finder" 1
-#finder "FK_StandardViewSettings" "Configure standard view settings (new)" -dict "ViewStyle" "Nlsv"
-#finder "FK_StandardViewSettings:IconViewSettings" "Configure standard icon view" -dict \
-#    "iconSize" 64 \
-#    "gridSpacing" 54 \
-#    "showItemInfo" false \
-#    "arrangeBy" "name"
-finder "FXDefaultSearchScope" "Search current folder by default in Finder" -string "SCcf"
-finder "FXEnableExtensionChangeWarning" "Disable warning when changing a file extension" -bool false
-#finder "FXInfoPanesExpanded" \
-#    "Expand the following File Info panes: General, Open with, Sharing & Permissions" "-dict" \
-#    "General" true \
-#    "OpenWith" true \
-#    "Privileges" true
-#finder "FXPreferredSearchViewStyle" "Use list view in search results by default" "Nlsv"
-finder "FXPreferredViewStyle" "Use list view in all Finder windows by default" -string "Nlsv"
-#finder "FXRecentFoldersViewStyle" "Use list view in Finder recents by default" "Nlsv"
-#finder "FXSearchViewSettings" "Set list view as default for search results (legacy)" -dict "ViewStyle" "Nlsv"
-#finder "OpenWindowForNewRemovableDisk" "Open new Finder window when a removable volume is mounted" 1
-#finder "SearchRecentsSavedViewStyle" "Use list view in Finder recents by default" "Nlsv"
-#finder "SearchViewSettings" "Set list view as default for search results" -dict "ViewStyle" "Nlsv"
-finder "ShowExternalHardDrivesOnDesktop" "Hide external disks on desktop" -bool false
-finder "ShowHardDrivesOnDesktop" "Hide hard drives on desktop" -bool false
-finder "ShowMountedServersOnDesktop" "Hide mounted servers on desktop" -bool false
-finder "ShowPathbar" "Show path bar in Finder" -bool true
-finder "ShowRemovableMediaOnDesktop" "Hide removable media on desktop" -bool false
-#finder "ShowStatusBar" "Show status bar in Finder" 1
-#finder "StandardViewSettings" "Configure standard view settings (legacy)" -dict \
-#    "ViewStyle" "Nlsv" \
-#    "IconViewSettings" -dict \
-#        "iconSize" 64 \
-#        "gridSpacing" 54 \
-#        "showItemInfo" false \
-#        "arrangeBy" "name"
-#finder "_FXShowPosixPathInTitle" "Hide POSIX path in Finder title" 0
-#finder "_FXSortFoldersFirst" "Show folders on top when sorting by name in Finder" 1
+    ############################################################################
+    # Menu Extra                                                               #
+    ############################################################################
 
-###############################################################################
-# DiskImages                                                                  #
-###############################################################################
+    default "com.apple.menuextra.clock" "FlashDateSeparators" "Enable flash date separators" -bool true
+    default "com.apple.menuextra.clock" "IsAnalog" "Set clock to digital" -bool false
+    default "com.apple.menuextra.clock" "ShowAMPM" "Show AM/PM in clock" -bool true
+    default "com.apple.menuextra.clock" "ShowDate" "Show date in clock" -bool true
+    default "com.apple.menuextra.clock" "ShowDayOfWeek" "Show day of week in clock" -bool true
+    default "com.apple.menuextra.clock" "ShowSeconds" "Hide seconds in clock" -bool false
 
-#default "com.apple.frameworks.diskimages" "auto-open-ro-root" "Open new Finder window when a read-only volume is mounted" 1
-#default "com.apple.frameworks.diskimages" "auto-open-rw-root" "Open new Finder window when a read-write volume is mounted" 1
+    ############################################################################
+    # NetworkBrowser                                                           #
+    ############################################################################
 
-###############################################################################
-# Help Viewer                                                                 #
-###############################################################################
+    #default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "Enable AirDrop over all interfaces" true
 
-#default "com.apple.helpviewer" "DevMode" "Show Help Viewer content in standard windows" 1
+    ############################################################################
+    # Print                                                                    #
+    ############################################################################
 
-###############################################################################
-# LaunchServices                                                              #
-###############################################################################
+    #default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog when finished" true
 
-#default "com.apple.LaunchServices" "LSQuarantine" "Disable quarantine for downloaded files" false
+    ############################################################################
+    # Security                                                                 #
+    ############################################################################
 
-###############################################################################
-# Menu Extra                                                                  #
-###############################################################################
+    #default "com.apple.security" "GKAutoRearm" "Disable Gatekeeper auto-rearm" false
+    #default "com.apple.security" "assessment" "Disable Gatekeeper assessment" false
 
-default "com.apple.menuextra.clock" "FlashDateSeparators" "Enable flash date separators" -bool true
-default "com.apple.menuextra.clock" "IsAnalog" "Set clock to digital" -bool false
-default "com.apple.menuextra.clock" "ShowAMPM" "Show AM/PM in clock" -bool true
-default "com.apple.menuextra.clock" "ShowDate" "Show date in clock" -bool true
-default "com.apple.menuextra.clock" "ShowDayOfWeek" "Show day of week in clock" -bool true
-default "com.apple.menuextra.clock" "ShowSeconds" "Hide seconds in clock" -bool false
+    ############################################################################
+    # WindowManager                                                            #
+    ############################################################################
 
-###############################################################################
-# NetworkBrowser                                                              #
-###############################################################################
+    #default "com.apple.WindowManager" "GloballyEnabled" "Disable Stage Manager" 0
 
-#default "com.apple.NetworkBrowser" "BrowseAllInterfaces" "Enable AirDrop over all interfaces" true
+    ############################################################################
+    # Apply Changes                                                            #
+    ############################################################################
 
-###############################################################################
-# Print                                                                       #
-###############################################################################
+    apply_changes() {
+        [[ ${#MODIFIED_DOMAINS[@]} -eq 0 ]] && return || true
 
-#default "com.apple.print.PrintingPrefs" "Quit When Finished" "Quit print dialog when finished" true
+        local restart_list=()
+        local needs_logout=false
 
-###############################################################################
-# Security                                                                  #
-###############################################################################
+        add_to_restart() {
+            local app="$1"
+            array_contains "$app" "${restart_list[@]}" || restart_list+=("$app")
+        }
 
-#default "com.apple.security" "GKAutoRearm" "Disable Gatekeeper auto-rearm" false
-#default "com.apple.security" "assessment" "Disable Gatekeeper assessment" false
+        # TODO: something not working here (system restart required)
+        for domain in "${MODIFIED_DOMAINS[@]}"; do
+            case "$domain" in
+                "NSGlobalDomain")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "SystemUIServer"
+                    add_to_restart "Finder"
+                    ;;
+                "com.apple.dock")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "Dock"
+                    needs_logout=true
+                    ;;
+                "com.apple.finder")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "Finder"
+                    needs_logout=true
+                    ;;
+                "com.apple.controlcenter")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "ControlCenter"
+                    needs_logout=true
+                    ;;
+                "com.apple.Spotlight")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "Spotlight"
+                    needs_logout=true
+                    ;;
+                "com.apple.menuextra.clock")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "SystemUIServer"
+                    needs_logout=true
+                    ;;
+                *)
+                    debug "Unknown domain $domain"
+                    add_to_restart "cfprefsd"
+                    needs_logout=true
+                    ;;
+            esac
+        done
 
-###############################################################################
-# WindowManager                                                               #
-###############################################################################
+        for app in "${restart_list[@]}"; do
+            restart_app "$app"
+        done
 
-#default "com.apple.WindowManager" "GloballyEnabled" "Disable Stage Manager" 0
+        if [[ "$needs_logout" == "true" ]]; then
+            warn "Some changes require logout/restart to take effect"
+        fi
+    }
 
-###############################################################################
-# Spotlight                                                                   #
-###############################################################################
+    apply_changes
+}
 
-###############################################################################
-# Control Center                                                              #
-###############################################################################
-
-###############################################################################
-# Kill all                                                                    #
-###############################################################################
-
-
-RESTART_REQUIRED=false
-restart_list=()
-# Build list of services to restart
-# TODO: something not working here (system restart required)
-for domain in "${MODIFIED_DOMAINS[@]}"; do
-    case "$domain" in
-        "NSGlobalDomain")
-            array_add restart_list "cfprefsd"
-            array_add restart_list "SystemUIServer"
-            array_add restart_list "Finder"
-            ;;
-        "com.apple.dock")
-            array_add restart_list "cfprefsd"
-            array_add restart_list "Dock"
-            RESTART_REQUIRED=true
-            ;;
-        "com.apple.finder")
-            array_add restart_list "cfprefsd"
-            array_add restart_list "Finder"
-            RESTART_REQUIRED=true
-            ;;
-        "com.apple.controlcenter")
-            array_add restart_list "cfprefsd"
-            array_add restart_list "ControlCenter"
-            RESTART_REQUIRED=true
-            ;;
-        "com.apple.Spotlight")
-            array_add restart_list "cfprefsd"
-            array_add restart_list "Spotlight"
-            RESTART_REQUIRED=true
-            ;;
-        "com.apple.menuextra.clock")
-            array_add restart_list "cfprefsd"
-            array_add restart_list "SystemUIServer"
-            RESTART_REQUIRED=true
-            ;;
-        *)
-            debug "Unknown domain $domain"
-            array_add restart_list "cfprefsd"
-            RESTART_REQUIRED=true
-            ;;
-    esac
-done
-
-# Restart services based on modified domains
-for app in "${restart_list[@]}"; do
-    restart_app "$app"
-done
-
-if [[ "$RESTART_REQUIRED" == "true" ]]; then
-    warn "Some changes require a restart to take effect"
-fi
+configure_macos

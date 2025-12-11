@@ -1,25 +1,20 @@
 #!/bin/zsh
 
-# only run on m-series macs
-if is_m1; then
-    # check if rosetta service is running
-    check_rosetta_status=$(pgrep oahd)
+install_rosetta() {
+    if ! is_apple_silicon; then
+        ok "Rosetta2 not required (Intel Mac)"
+        return
+    fi
 
-    # check to see if rosetta folder exists
-    # rosetta service is already running without rosetta2 being installed on macOS >=11.5
-    rosetta_folder="/Library/Apple/usr/share/rosetta"
+    local rosetta_folder="/Library/Apple/usr/share/rosetta"
 
-    if [[ -n $check_rosetta_status ]] && [[ -e $rosetta_folder ]]; then
-        ok "Rosetta2 is already installed. Continuing..."
+    if pgrep -q oahd && [[ -d "$rosetta_folder" ]]; then
+        ok "Rosetta2 already installed"
     else
         info "Installing Rosetta2..."
-
-        # installs rosetta2
-        softwareupdate --install-rosetta --agree-to-license --verbose |
-            tee -a "${LOG_PATH}"
-
-        ok "Rosetta2 installed successfully"
+        softwareupdate --install-rosetta --agree-to-license
+        ok "Rosetta2 installed"
     fi
-else
-    info "Rosetta2 is not required on Intel Macs"
-fi
+}
+
+install_rosetta

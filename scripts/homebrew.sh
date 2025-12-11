@@ -1,66 +1,55 @@
 #!/bin/zsh
 
-# check apps vs casks
+declare -A CASK_OVERRIDES=(
+    ["Ableton Live 11 Suite"]="ableton-live-suite@11"
+    ["BambuStudio"]="bambu-studio"
+    ["Linear"]="linear-linear"
+    ["Parallels Desktop"]="parallels"
+    ["WiFi Explorer Pro 3"]="wifi-explorer-pro"
+    ["zoom.us"]="zoom"
+)
+
 check_casks() {
     info "Checking Applications against Homebrew casks..."
-    
-    # Get list of installed applications
-    local installed_apps=$(ls /Applications | grep '\.app$' | sed 's/\.app$//')
 
-    # declare app overrides with optional version checks
-    declare -A app_overrides=(
-        ["Ableton Live 11 Suite"]="ableton-live-suite@11"
-        ["BambuStudio"]="bambu-studio"
-        ["Linear"]="linear-linear"
-        ["Parallels Desktop"]="parallels"
-        ["WiFi Explorer Pro 3"]="wifi-explorer-pro"
-        ["zoom.us"]="zoom"
-        # Add more overrides as needed
-    )
-    
-    # For each application, check if it was installed via Homebrew
-    echo "$installed_apps" | while read app; do
-        # Skip system applications
-        if [[ -d "/Applications/$app.app/Contents/_MASReceipt" ]]; then
-            continue  # Skip Mac App Store apps
-        fi
-        
-        # Check for override first, otherwise use default conversion
-        if [ -n "${app_overrides[$app]}" ]; then
-            local full_cask_name="${app_overrides[$app]}"
-            # Split into base cask and version if @ exists
-            if [[ "$full_cask_name" == *@* ]]; then
-                local cask_name="${full_cask_name%@*}"  # everything before @
-                local version="${full_cask_name#*@}"    # everything after @
-                if brew list --cask | grep -q "^${cask_name}@${version}$"; then
-                    ok "Found $app (Homebrew managed, version $version)"
-                else
-                    warn "$app found but expected version $version"
-                fi
-                continue
-            else
-                local cask_name="$full_cask_name"
-            fi
+    local installed_apps
+    installed_apps=$(ls /Applications | grep '\.app$' | sed 's/\.app$//')
+
+    local brew_casks
+    brew_casks=$(brew list --cask 2>/dev/null)
+
+    while IFS= read -r app; do
+        [[ -d "/Applications/$app.app/Contents/_MASReceipt" ]] && continue
+
+        local cask_name
+        if [[ -n "${CASK_OVERRIDES[$app]}" ]]; then
+            cask_name="${CASK_OVERRIDES[$app]}"
         else
-            local cask_name=$(echo "$app" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            cask_name=$(echo "$app" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
         fi
-        
-        # Check for non-versioned casks
-        if brew list --cask | grep -q "^${cask_name}$"; then
-            ok "Found $app (Homebrew managed)"
+
+        if echo "$brew_casks" | grep -q "^${cask_name}$"; then
+            ok "$app (Homebrew managed)"
         else
-            warn "$app might not be managed by Homebrew"
+            warn "$app not managed by Homebrew"
         fi
-    done
+    done <<< "$installed_apps"
 }
 
-info "Running brew doctor..."
-brew doctor
+update_homebrew() {
+    info "Running brew doctor..."
+    brew doctor || true
 
-info "Updating Homebrew..."
-brew update
+    info "Updating Homebrew..."
+    brew update || true
 
-info "Upgrading all formulae..."
-brew upgrade
+    info "Upgrading formulae..."
+    brew upgrade --formula || true
 
-ok "Homebrew is up to date"
+    info "Upgrading casks..."
+    brew upgrade --cask || true
+
+    ok "Homebrew up to date"
+}
+
+update_homebrew
