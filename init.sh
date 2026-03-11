@@ -163,6 +163,7 @@ install_packages() {
     #brewi utm --cask
     #brewi waves-central --cask
     #brewi xnapper --cask
+    brewi wispr-flow --cask
     #brewi wifi-explorer-pro --cask
     #brewi zoom --cask
 

@@ -20,10 +20,11 @@ List of things I need to configure and automate for simple dev env setup (in no 
 - [x] macOS defaults (system preferences) Maybe more to explore here?
 - [x] Ghostty
 - [x] Raycast
-- [ ] yabai?
-- [ ] skhd?
+- [x] Slack
+- [x] Superhuman
+- [x] Wispr Flow
 - [ ] Actual .dotfiles symlinking
 - [ ] UTM (full disk access)
 - [ ] CrystalFetch
 - [ ] QEMU-aarch64 (full disk access)
-- [x] Map Downloads to iCloud? (see below)
+- [x] Map Downloads to iCloud?
