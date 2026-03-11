@@ -99,18 +99,18 @@ install_packages() {
     #brewi neovim
 
     # casks
-    #brewi 1password --cask
+    brewi 1password --cask
     #brewi ableton-live-suite@11 --cask
     #brewi adobe-creative-cloud --cask
-    #brewi appcleaner --cask
+    brewi appcleaner --cask
     #brewi bambu-studio --cask
     #brewi beekeeper-studio --cask
     #brewi cursor --cask
     #brewi dotnet --cask
-    #brewi ghostty --cask  # TODO: Give full disk access.  Is this possible?
+    brewi ghostty --cask  # TODO: Give full disk access.  Is this possible?
     #brewi gitkraken --cask
     #brewi godot --cask
-    #brewi google-chrome --cask
+    brewi google-chrome --cask
     #brewi handbrake --cask
     #brewi iina --cask
     #brewi imazing --cask
@@ -120,9 +120,9 @@ install_packages() {
     #brewi osquery --cask
     #brewi parallels --cask
     #brewi powershell --cask
-    #brewi raycast --cask
-    #brewi slack --cask
-    #brewi superhuman --cask
+    brewi raycast --cask
+    brewi slack --cask
+    brewi superhuman --cask
     #brewi utm --cask
     #brewi waves-central --cask
     #brewi xnapper --cask
