@@ -105,6 +105,32 @@ color() { printf "\033[0;%sm%s\033[0m" "$1" "$2"; }
 global() { default "NSGlobalDomain" "$@"; }
 finder() { default "com.apple.finder" "$@"; }
 
+symbolic_hotkey() {
+    local key_id="$1"
+    local enabled="$2"
+    local description="$3"
+    local plist="$HOME/Library/Preferences/com.apple.symbolichotkeys.plist"
+    local current
+    local desired
+
+    current=$(/usr/libexec/PlistBuddy -c "Print AppleSymbolicHotKeys:$key_id:enabled" "$plist" 2>/dev/null || true)
+    desired=$(normalize_bool "$enabled")
+
+    if compare "-bool" "$current" "$desired"; then
+        ok "$(color 95 "com.apple.symbolichotkeys") $description"
+        return
+    fi
+
+    info "$(color 95 "com.apple.symbolichotkeys") AppleSymbolicHotKeys:$key_id needs to be updated..."
+    if /usr/libexec/PlistBuddy -c "Set AppleSymbolicHotKeys:$key_id:enabled $desired" "$plist"; then
+        modify_domain "com.apple.symbolichotkeys"
+        ok "$(color 95 "com.apple.symbolichotkeys") $description"
+    else
+        warn "$(color 95 "com.apple.symbolichotkeys") Failed to update AppleSymbolicHotKeys:$key_id"
+        return 1
+    fi
+}
+
 set_flag() {
     local path="$1" flag="$2" enable="$3" description="$4"
     local current_flags
@@ -217,15 +243,15 @@ configure_macos() {
     # Apple Symbolic Hotkeys                                                   #
     ############################################################################
 
-    #hotkey() { default "com.apple.symbolichotkeys" "$@"; }
-    #hotkey "AppleSymbolicHotKeys:52" "Disable Dock hiding shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:79" "Disable Mission Control switch to previous Space shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:80" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:81" "Disable Mission Control switch to next Space shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:82" "Disable Mission Control switch to previous Space with window shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:65" "Disable Spotlight search shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:118" "Disable Spotlight file search shortcut" -dict "enabled" 0
-    #hotkey "AppleSymbolicHotKeys:160" "Disable Launchpad shortcut" -dict "enabled" 0
+    symbolic_hotkey "64" false "Disable Spotlight shortcut"
+    #symbolic_hotkey "52" false "Disable Dock hiding shortcut"
+    #symbolic_hotkey "79" false "Disable Mission Control switch to previous Space shortcut"
+    #symbolic_hotkey "80" false "Disable Mission Control switch to previous Space with window shortcut"
+    #symbolic_hotkey "81" false "Disable Mission Control switch to next Space shortcut"
+    #symbolic_hotkey "82" false "Disable Mission Control switch to previous Space with window shortcut"
+    #symbolic_hotkey "65" false "Disable Finder search shortcut"
+    #symbolic_hotkey "118" false "Disable Spotlight file search shortcut"
+    #symbolic_hotkey "160" false "Disable Launchpad shortcut"
 
     ############################################################################
     # BezelServices                                                            #
@@ -394,6 +420,11 @@ configure_macos() {
                 "com.apple.controlcenter")
                     add_to_restart "cfprefsd"
                     add_to_restart "ControlCenter"
+                    needs_logout=true
+                    ;;
+                "com.apple.symbolichotkeys")
+                    add_to_restart "cfprefsd"
+                    add_to_restart "SystemUIServer"
                     needs_logout=true
                     ;;
                 "com.apple.Spotlight")
