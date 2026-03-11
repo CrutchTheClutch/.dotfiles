@@ -39,10 +39,36 @@ request_sudo() {
 
 brew_path() {
     if is_apple_silicon; then
-        echo "/opt/homebrew/bin/brew:/opt/homebrew/sbin"
+        echo "/opt/homebrew/bin/brew"
     else
-        echo "/usr/local/bin/brew:/usr/local/sbin/brew"
+        echo "/usr/local/bin/brew"
     fi
+}
+
+homebrew_path() {
+    if is_apple_silicon; then
+        echo "/opt/homebrew/bin:/opt/homebrew/sbin"
+    else
+        echo "/usr/local/bin:/usr/local/sbin"
+    fi
+}
+
+init_zshrc() {
+    local zshrc_path="$HOME/.zshrc"
+    local homebrew_home
+
+    [[ -f "$zshrc_path" ]] && return
+
+    homebrew_home="$(homebrew_path)"
+
+    info "Creating ~/.zshrc..."
+    cat > "$zshrc_path" <<EOF
+# homebrew
+export HOMEBREW_HOME="$homebrew_home"
+export PATH="\$HOMEBREW_HOME:\$PATH"
+# homebrew end
+EOF
+    ok "~/.zshrc created"
 }
 
 install_homebrew() {
@@ -57,9 +83,8 @@ install_homebrew() {
         ok "Homebrew installed"
     fi
 
-    if ! command -v brew &>/dev/null; then
-        eval "$("$brew_bin" shellenv)"
-    fi
+    eval "$("$brew_bin" shellenv)"
+    init_zshrc
 }
 
 brewi() {
@@ -134,6 +159,9 @@ install_packages() {
     # formulae
     #brewi neofetch
     #brewi neovim
+
+    # bun
+    #curl -fsSL https://bun.com/install | bash
 
     # casks
     brewi 1password --cask
