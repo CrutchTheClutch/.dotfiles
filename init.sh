@@ -93,6 +93,43 @@ sync_dotfiles() {
     fi
 }
 
+map_downloads_to_icloud() {
+    local icloud_root="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
+    local icloud_downloads="$icloud_root/Downloads"
+    local downloads_path="$HOME/Downloads"
+    local backup_path
+
+    if [[ ! -d "$icloud_root" ]]; then
+        warn "Skipping Downloads -> iCloud mapping because iCloud Drive is not available"
+        return
+    fi
+
+    mkdir -p "$icloud_downloads"
+
+    if [[ -L "$downloads_path" ]]; then
+        if [[ "$(readlink "$downloads_path")" == "$icloud_downloads" ]]; then
+            ok "Downloads already mapped to iCloud"
+            return
+        fi
+
+        backup_path="${downloads_path}.backup.$(date +%Y%m%d%H%M%S)"
+        info "Backing up existing Downloads symlink to $(basename "$backup_path")..."
+        mv "$downloads_path" "$backup_path"
+    elif [[ -e "$downloads_path" ]]; then
+        backup_path="${downloads_path}.backup.$(date +%Y%m%d%H%M%S)"
+        info "Backing up existing Downloads folder to $(basename "$backup_path")..."
+        sudo mv "$downloads_path" "$backup_path"
+
+        if [[ -d "$backup_path" ]]; then
+            info "Copying existing Downloads contents into iCloud..."
+            rsync -a "$backup_path"/ "$icloud_downloads"/
+        fi
+    fi
+
+    ln -s "$icloud_downloads" "$downloads_path"
+    ok "Downloads mapped to iCloud"
+}
+
 install_packages() {
     # formulae
     #brewi neofetch
@@ -147,6 +184,7 @@ main() {
     source "$DOTFILES/scripts/macos.sh"
     source "$DOTFILES/scripts/homebrew.sh"
 
+    map_downloads_to_icloud
     install_packages
 }
 
