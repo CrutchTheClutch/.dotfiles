@@ -39,9 +39,9 @@ request_sudo() {
 
 brew_path() {
     if is_apple_silicon; then
-        echo "/opt/homebrew/bin/brew"
+        echo "/opt/homebrew/bin/brew:/opt/homebrew/sbin"
     else
-        echo "/usr/local/bin/brew"
+        echo "/usr/local/bin/brew:/usr/local/sbin/brew"
     fi
 }
 
