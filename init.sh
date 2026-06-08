@@ -186,6 +186,7 @@ install_packages() {
     #brewi parallels --cask
     #brewi powershell --cask
     brewi raycast --cask
+    brewi shottr --cask
     brewi slack --cask
     brewi superhuman --cask
     #brewi utm --cask
