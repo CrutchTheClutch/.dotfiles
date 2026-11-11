@@ -199,6 +199,19 @@ install_packages() {
     #check_casks
 }
 
+set_default_apps() {
+    brewi duti
+    brewi defaultbrowser
+
+    info "Setting Ghostty as the default terminal..."
+    duti -s com.mitchellh.ghostty public.unix-executable all
+    duti -s com.mitchellh.ghostty com.apple.terminal.shell-script all
+    ok "Ghostty is the default terminal"
+
+    info "Setting Chrome as the default browser (confirm the macOS prompt if shown)..."
+    defaultbrowser chrome
+}
+
 main() {
     if ! is_macos; then
         fail "This script currently only supports macOS"
@@ -216,6 +229,7 @@ main() {
 
     map_downloads_to_icloud
     install_packages
+    set_default_apps
 }
 
 main
